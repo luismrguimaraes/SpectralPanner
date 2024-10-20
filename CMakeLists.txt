@@ -52,6 +52,8 @@ add_subdirectory(JUCE)
 # This adds the melatonin inspector module
 add_subdirectory (modules/melatonin_inspector)
 
+add_subdirectory(JUCE/extras/AudioPluginHost)
+
 # See `docs/CMake API.md` in the JUCE repo for all config options
 juce_add_plugin("${PROJECT_NAME}"
     # Icons for the standalone app
@@ -119,7 +121,7 @@ target_compile_definitions(SharedCode
     VERSION="${CURRENT_VERSION}"
 
     # JucePlugin_Name is for some reason doesn't use the nicer PRODUCT_NAME
-    PRODUCT_NAME_WITHOUT_VERSION="Pamplejuce"
+    PRODUCT_NAME_WITHOUT_VERSION="Spectral Panner"
 )
 
 # Link to any other modules you added (with juce_add_module) here!

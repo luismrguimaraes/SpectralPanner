@@ -1,6 +1,8 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
+//#include "dsp/spectral.h"
+#include "dsp/delay.h"
 
 #if (MSVC)
 #include "ipps.h"
@@ -38,6 +40,16 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    std::unique_ptr<juce::AudioParameterInt> delayMs = std::make_unique<juce::AudioParameterInt> ("paramID", "Parameter Name", 0, 5000, 800);
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
+
+    int previousDelayMs;
+	double decayGain = 0.5;
+
+    float wet = 0.5;
+
+	int delaySamples;
+    using Delay = signalsmith::delay::Delay<float, signalsmith::delay::InterpolatorNearest>;
+    Delay delay;
 };
