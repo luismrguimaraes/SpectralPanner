@@ -86,6 +86,11 @@ void PluginProcessor::changeProgramName (int index, const juce::String& newName)
     juce::ignoreUnused (index, newName);
 }
 
+juce::AudioProcessorParameter* PluginProcessor::getBypassParameter() const
+{
+    return apvts.getParameter("Bypass");
+}
+
 //==============================================================================
 void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
@@ -95,9 +100,14 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 
     previousDelayMs = *delayMs;
 
-    delaySamples = *delayMs*0.001*sampleRate;
+    delaySamples = *delayMs*0.001*(int)sampleRate;
     delay.resize(delaySamples + 1);
     delay.reset();
+
+    setLatencySamples(fft[0].getLatencyInSamples());
+    fft[0].reset();
+    fft[1].reset();
+
 }
 
 void PluginProcessor::releaseResources()
@@ -114,8 +124,8 @@ bool PluginProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
   #else
     // This is the place where you check if the layout is supported.
     // In this template code we only support mono or stereo.
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-     && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+    if (/*layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
+     &&*/ layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
         return false;
 
     // This checks if the input layout matches the output layout
@@ -166,32 +176,38 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         auto* channelData = buffer.getWritePointer (channel);
         juce::ignoreUnused (channelData);
         // ..do something to the data...
-        
-        /*
-        if (channel == 0)
-            for (int i = 0; i < buffer.getNumSamples(); i++){
-            channelData[i] = 0;
-        }
-        else{
-            for (int i = 0; i < buffer.getNumSamples(); i++){
-                delayLine.write(channelData[i]);
-            }
-            for (int i = 0; i < buffer.getNumSamples(); i++){
-                channelData[i] = delayLine.read(512 + buffer.getNumSamples() -i + Delay::latency);
-            }
-        }*/
 
+        // delay processing on the left channel
         if (channel == 0){
-            for (int i = 0; i < buffer.getNumSamples(); i++){
-                float delayed = delay.read(delaySamples);
+            // for (int i = 0; i < buffer.getNumSamples(); i++){
+            //     float delayed = delay.read(delaySamples);
                 
-                float sum = channelData[i] + delayed*decayGain; 
-                delay.write(sum);
+            //     float sum = channelData[i] + delayed*decayGain; 
+            //     delay.write(sum);
 
-                channelData[i] = channelData[i] * (1 -wet) + delayed * wet;
-            }
+            //     channelData[i] = channelData[i] * (1 -wet) + delayed * wet;
+            // }
+
+            //analyse block
+            // if (!stftReady.load()){
+            //     stft.analyse(0, channelData);
+            //     stftReady.store(true);
+            // }
         }
 
+    }
+
+    auto numSamples = buffer.getNumSamples();
+
+    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i) {
+        buffer.clear(i, 0, numSamples);
+    }
+
+    bool bypassed = apvts.getRawParameterValue("Bypass")->load();
+
+    for (int channel = 0; channel < totalNumInputChannels; ++channel) {
+        auto* channelData = buffer.getWritePointer(channel);
+        fft[channel].processBlock(channelData, numSamples, bypassed);
     }
 
     // update "previousParams"
@@ -223,6 +239,18 @@ void PluginProcessor::setStateInformation (const void* data, int sizeInBytes)
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
     *delayMs = juce::MemoryInputStream (data, static_cast<size_t> (sizeInBytes), false).readFloat();
+}
+
+juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParameterLayout()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID("Bypass", 1),
+        "Bypass",
+        false));
+
+    return layout;
 }
 
 //==============================================================================

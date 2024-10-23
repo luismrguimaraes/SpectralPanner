@@ -1,8 +1,14 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
-//#include "dsp/spectral.h"
+#include "FFTProcessor.h"
+
+// import Signalsmith's DSP library, and ignore its warnings
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Weverything"
+#include "dsp/spectral.h"
 #include "dsp/delay.h"
+#pragma clang diagnostic pop
 
 #if (MSVC)
 #include "ipps.h"
@@ -41,6 +47,17 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     std::unique_ptr<juce::AudioParameterInt> delayMs = std::make_unique<juce::AudioParameterInt> ("paramID", "Parameter Name", 0, 5000, 800);
+
+    // signalsmith::spectral::STFT<float> stft{1, 512, 64};
+    // std::atomic<bool> stftReady = false;
+
+    juce::AudioProcessorParameter* getBypassParameter() const override;
+    juce::AudioProcessorValueTreeState apvts { *this, nullptr, "Parameters", createParameterLayout() };
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+
+    // We need a separate FFTProcessor for each channel.
+    FFTProcessor fft[2];
+    
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 
@@ -52,4 +69,5 @@ private:
 	int delaySamples;
     using Delay = signalsmith::delay::Delay<float, signalsmith::delay::InterpolatorNearest>;
     Delay delay;
+
 };

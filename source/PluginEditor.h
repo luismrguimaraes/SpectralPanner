@@ -4,8 +4,10 @@
 #include "BinaryData.h"
 #include "melatonin_inspector/melatonin_inspector.h"
 
+#include "FFTProcessor.h"
+
 //==============================================================================
-class PluginEditor : public juce::AudioProcessorEditor
+class PluginEditor : public juce::AudioProcessorEditor, juce::Timer
 {
 public:
     explicit PluginEditor (PluginProcessor&);
@@ -14,6 +16,7 @@ public:
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
+    void timerCallback() override;
 
 private:
     // This reference is provided as a quick way for your editor to
@@ -21,7 +24,12 @@ private:
     PluginProcessor& processorRef;
     std::unique_ptr<melatonin::Inspector> inspector;
     juce::TextButton inspectButton { "Inspect the UI" };
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 
     juce::Slider delayMsSlider;
+    float scopeData[FFTProcessor::fftSize];
+
+    void drawNextFrameOfSpectrum();
+    void drawFrame(juce::Graphics&);
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };
