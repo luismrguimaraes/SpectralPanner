@@ -7,6 +7,9 @@ FFTProcessor::FFTProcessor() :
     // Note that the window is of length `fftSize + 1` because JUCE's windows
     // are symmetrical, which is wrong for overlap-add processing. To make the
     // window periodic, set size to 1025 but only use the first 1024 samples.
+
+    for (int i = 0; i < fftSize; i++)
+        fftDisplayable[i] = 0.f;
 }
 
 void FFTProcessor::reset()
@@ -78,6 +81,11 @@ void FFTProcessor::processFrame(bool bypassed)
         // Do stuff with the FFT data.
         processSpectrum(fftPtr, numBins);
 
+        // fill/update fftDisplayable
+        for (int i = 0 ; i < fftSize; ++i){
+            fftDisplayable[i] = fftData[i];
+        }
+
         // Perform the inverse FFT.
         fft.performRealOnlyInverseTransform(fftPtr);
     }
@@ -98,7 +106,7 @@ void FFTProcessor::processFrame(bool bypassed)
         outputFifo[i + pos] += fftData[i];
     }
 
-    ready.store(true);
+    readyToDisplay.store(true);
 }
 
 void FFTProcessor::processSpectrum(float* data, int _numBins)

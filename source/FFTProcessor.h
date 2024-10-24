@@ -28,7 +28,8 @@ public:
     // The FFT working space. Contains interleaved complex numbers.
     std::array<float, fftSize * 2> fftData;
 
-    std::atomic<bool> ready = false;
+    std::array<float, fftSize> fftDisplayable{};
+    std::atomic<bool> readyToDisplay = false;
 private:
     void processFrame(bool bypassed);
     void processSpectrum(float* data, int numBins);

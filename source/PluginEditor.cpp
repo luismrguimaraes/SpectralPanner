@@ -23,7 +23,7 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize (400, 300);
+    setSize (800, 600);
 
     startTimer (50);
 }
@@ -34,29 +34,25 @@ PluginEditor::~PluginEditor()
 
 void PluginEditor::drawNextFrameOfSpectrum()
 {
-    auto mindB = -100.0f;
-    auto maxdB =    0.0f;
+    auto mindB = JUCE_LIVE_CONSTANT(-100.0f);
+    auto maxdB =    JUCE_LIVE_CONSTANT(0.0f);
 
         for (int i = 0; i < FFTProcessor::fftSize; ++i)                         // [3]
         {
-            //auto skewedProportionX = 1.0f - std::exp (std::log (1.0f - (float) i / (float) FFTProcessor::fftSize) * 0.2f);
-            //auto fftDataIndex = juce::jlimit (0, FFTProcessor::fftSize / 2, (int) (skewedProportionX * (float) FFTProcessor::fftSize * 0.5f));
-            auto level = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (processorRef.fft[0].fftData[i])
+            auto skewedProportionX = 1.0f - std::exp (std::log (1.0f - (float) i / (float) FFTProcessor::fftSize) * 0.2f);
+            auto fftDataIndex = juce::jlimit (0, FFTProcessor::fftSize, (int) (skewedProportionX * (float) FFTProcessor::fftSize));
+            auto level = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (processorRef.fft[0].fftDisplayable[fftDataIndex])
                                                                - juce::Decibels::gainToDecibels ((float) FFTProcessor::fftSize)),
                                      mindB, maxdB, 0.0f, 1.0f);
-        scopeData[i] = level; //std::abs(processorRef.stft.spectrum[i]->imag()) + std::abs(processorRef.stft.spectrum[i]->real());
-        
-        // scopeData[i] = std::abs(*processorRef.stft.spectrum[i]);
-        if (scopeData[i] < 0.f || scopeData[i] > 1.f)
-             std::cout << scopeData[i] << std::endl;
+            scopeData[i] = level;
         }
 }
 
 void PluginEditor::timerCallback()
 {
-    if (processorRef.fft[0].ready.load()){
+    if (processorRef.fft[0].readyToDisplay.load()){
         drawNextFrameOfSpectrum();
-        processorRef.fft[0].ready.store(false);
+        processorRef.fft[0].readyToDisplay.store(false);
         repaint();
     }
 }
@@ -72,6 +68,9 @@ void PluginEditor::drawFrame (juce::Graphics& g)
                                 juce::jmap (scopeData[i - 1], 0.0f, 1.0f, (float) height, 0.0f),
                         (float) juce::jmap (i,     0, FFTProcessor::fftSize - 1, 0, width),
                                 juce::jmap (scopeData[i],     0.0f, 1.0f, (float) height, 0.0f) });
+
+        if (std::isnan (scopeData[i]))
+            std::cout << i << std::endl;;
     }
 }
 

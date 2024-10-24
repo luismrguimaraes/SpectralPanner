@@ -238,7 +238,7 @@ void PluginProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
-    *delayMs = juce::MemoryInputStream (data, static_cast<size_t> (sizeInBytes), false).readFloat();
+    *delayMs = juce::MemoryInputStream (data, static_cast<size_t> (sizeInBytes), false).readInt();
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParameterLayout()
