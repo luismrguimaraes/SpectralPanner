@@ -57,7 +57,7 @@ public:
 
     // We need a separate FFTProcessor for each channel.
     FFTProcessor fft[2];
-    
+
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 

@@ -26,9 +26,10 @@ private:
     juce::TextButton inspectButton { "Inspect the UI" };
 
     juce::Slider delayMsSlider;
-    float scopeData[FFTProcessor::fftSize];
-    std::vector<float *> scopeDataStorage{};
-    int scopeDataStorageMaxSize = 64;
+
+    juce::Slider spectralSlider;
+    float scopeDataL[FFTProcessor::fftSize];
+    float scopeDataR[FFTProcessor::fftSize];
 
     void drawNextFrameOfSpectrum();
     void drawFrame(juce::Graphics&);

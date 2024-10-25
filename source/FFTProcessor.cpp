@@ -80,7 +80,7 @@ void FFTProcessor::processFrame(bool bypassed)
 
         // fill/update fftDisplayable
         for (int i = 0 ; i < fftSize; ++i){
-            fftDisplayable[i] = fftData[i];
+            fftDisplayable[i] = fftPtr[i];
         }
 
         // Perform the inverse FFT.
@@ -119,12 +119,15 @@ void FFTProcessor::processSpectrum(float* data, int _numBins)
         float phase = std::arg(cdata[i]);
 
         // This is where you'd do your spectral processing...
-
-        // Silly example where we change the phase of each frequency bin
-        // somewhat randomly. Uncomment the following line to enable.
-        //phase *= float(i);
+        if (i > _numBins/2){
+            // apply panning
+            magnitude *= 1 + *spectralSliderValue;
+        }
 
         // Convert magnitude and phase back into a complex number.
         cdata[i] = std::polar(magnitude, phase);
     }
+
+    // std::cout << *spectralSliderValue << std::endl;
+    // std::cout << _numBins << std::endl;
 }

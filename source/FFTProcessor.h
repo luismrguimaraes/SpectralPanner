@@ -30,6 +30,8 @@ public:
 
     std::array<float, fftSize> fftDisplayable{};
     std::atomic<bool> readyToDisplay = false;
+    std::unique_ptr<double> spectralSliderValue = std::make_unique<double>(0.0);
+
 private:
     void processFrame(bool bypassed);
     void processSpectrum(float* data, int numBins);

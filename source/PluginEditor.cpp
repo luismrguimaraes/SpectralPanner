@@ -5,8 +5,10 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 {
     juce::ignoreUnused (processorRef);
 
-    for (int i = 0; i<FFTProcessor::fftSize; ++i)
-        scopeData[i] = 0;
+    for (int i = 0; i<FFTProcessor::fftSize; ++i){
+        scopeDataL[i] = 0;
+        scopeDataR[i] = 0;
+    }
 
     addAndMakeVisible (inspectButton);
     // this chunk of code instantiates and opens the melatonin inspector
@@ -24,6 +26,14 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     delayMsSlider.setRange(0, 2000, 1);
     delayMsSlider.onValueChange = [this] { *processorRef.delayMs = delayMsSlider.getValue();};
 
+    addAndMakeVisible(spectralSlider);
+    spectralSlider.setRange(-1, 1);
+    spectralSlider.setValue(0.0);
+    spectralSlider.onValueChange = [this] { 
+        *processorRef.fft[0].spectralSliderValue = -spectralSlider.getValue();
+        *processorRef.fft[1].spectralSliderValue = spectralSlider.getValue();
+    };
+
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize (800, 600);
@@ -40,39 +50,29 @@ void PluginEditor::drawNextFrameOfSpectrum()
     auto mindB = JUCE_LIVE_CONSTANT(-100.0f);
     auto maxdB =    JUCE_LIVE_CONSTANT(0.0f);
 
-    float scopeDataToStore[FFTProcessor::fftSize];
     for (int i = 0; i < FFTProcessor::fftSize; ++i)
     {
-        auto skewedProportionX = 1.0f - std::exp (std::log (1.0f - (float) i / (float) FFTProcessor::fftSize) * 0.1f);
+        auto skewedProportionX = 1.0f - std::exp (std::log (1.0f - (float) i / (float) FFTProcessor::fftSize) * 1.f);
         auto fftDataIndex = juce::jlimit (0, FFTProcessor::fftSize, (int) (skewedProportionX * (float) FFTProcessor::fftSize));
-        auto level = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (processorRef.fft[0].fftDisplayable[fftDataIndex])
+        
+        auto levelL = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (processorRef.fft[0].fftDisplayable[fftDataIndex])
                                                             - juce::Decibels::gainToDecibels ((float) FFTProcessor::fftSize)),
                                     mindB, maxdB, 0.0f, 1.0f);
-        scopeDataToStore[i] = level;
+        scopeDataL[i] = levelL;
 
-        std::vector<float> vec;
-        for (int j = scopeDataStorage.size() -1; j>=0; j--){
-            // get i index from the stored FFTs
-            vec.push_back((float) scopeDataStorage[j][i]);
-        }
-        vec.push_back(level);
-        float average = std::accumulate(vec.begin(), vec.end(), 0.0) / vec.size();
-        scopeData[i] = average;
+        auto levelR = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (processorRef.fft[1].fftDisplayable[fftDataIndex])
+                                                            - juce::Decibels::gainToDecibels ((float) FFTProcessor::fftSize)),
+                                    mindB, maxdB, 0.0f, 1.0f);
+        scopeDataR[i] = levelR;
     }
-
-    // store
-    scopeDataStorage.push_back(scopeDataToStore);
-    if (scopeDataStorage.size() == scopeDataStorageMaxSize)
-        scopeDataStorage.erase(scopeDataStorage.begin());
-
-    std::cout << scopeDataStorage.size() << std::endl;
 }
 
 void PluginEditor::timerCallback()
 {
-    if (processorRef.fft[0].readyToDisplay.load()){
+    if (processorRef.fft[0].readyToDisplay.load() && processorRef.fft[1].readyToDisplay.load()){
         drawNextFrameOfSpectrum();
         processorRef.fft[0].readyToDisplay.store(false);
+        processorRef.fft[1].readyToDisplay.store(false);
         repaint();
     }
 }
@@ -84,10 +84,16 @@ void PluginEditor::drawFrame (juce::Graphics& g)
         auto width  = getLocalBounds().getWidth();
         auto height = getLocalBounds().getHeight();
 
+        g.setColour(juce::Colours::beige);
         g.drawLine ({ (float) juce::jmap (i - 1, 0, FFTProcessor::fftSize - 1, 0, width),
-                                juce::jmap (scopeData[i - 1], 0.0f, 1.0f, (float) height, 0.0f),
+                                juce::jmap (scopeDataL[i - 1], 0.0f, 1.0f, (float) height, 0.0f),
                         (float) juce::jmap (i,     0, FFTProcessor::fftSize - 1, 0, width),
-                                juce::jmap (scopeData[i],     0.0f, 1.0f, (float) height, 0.0f) });
+                                juce::jmap (scopeDataL[i],     0.0f, 1.0f, (float) height, 0.0f) });
+        g.setColour(juce::Colours::darkcyan);
+        g.drawLine ({ (float) juce::jmap (i - 1, 0, FFTProcessor::fftSize - 1, 0, width),
+                                juce::jmap (scopeDataR[i - 1], 0.0f, 1.0f, (float) height, 0.0f),
+                        (float) juce::jmap (i,     0, FFTProcessor::fftSize - 1, 0, width),
+                                juce::jmap (scopeDataR[i],     0.0f, 1.0f, (float) height, 0.0f) });
     }
 }
 
@@ -113,4 +119,6 @@ void PluginEditor::resized()
     inspectButton.setBounds (getLocalBounds().withSizeKeepingCentre(100, 50));
 
     delayMsSlider.setBounds(getLocalBounds());
+
+    spectralSlider.setBounds(getLocalBounds());
 }

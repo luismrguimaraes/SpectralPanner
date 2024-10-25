@@ -107,7 +107,6 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     setLatencySamples(fft[0].getLatencyInSamples());
     fft[0].reset();
     fft[1].reset();
-
 }
 
 void PluginProcessor::releaseResources()
