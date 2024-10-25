@@ -27,6 +27,8 @@ private:
 
     juce::Slider delayMsSlider;
     float scopeData[FFTProcessor::fftSize];
+    std::vector<float *> scopeDataStorage{};
+    int scopeDataStorageMaxSize = 64;
 
     void drawNextFrameOfSpectrum();
     void drawFrame(juce::Graphics&);

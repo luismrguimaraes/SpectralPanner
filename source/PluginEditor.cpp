@@ -5,6 +5,9 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 {
     juce::ignoreUnused (processorRef);
 
+    for (int i = 0; i<FFTProcessor::fftSize; ++i)
+        scopeData[i] = 0;
+
     addAndMakeVisible (inspectButton);
     // this chunk of code instantiates and opens the melatonin inspector
     inspectButton.onClick = [&] {
@@ -37,15 +40,32 @@ void PluginEditor::drawNextFrameOfSpectrum()
     auto mindB = JUCE_LIVE_CONSTANT(-100.0f);
     auto maxdB =    JUCE_LIVE_CONSTANT(0.0f);
 
-        for (int i = 0; i < FFTProcessor::fftSize; ++i)                         // [3]
-        {
-            auto skewedProportionX = 1.0f - std::exp (std::log (1.0f - (float) i / (float) FFTProcessor::fftSize) * 0.2f);
-            auto fftDataIndex = juce::jlimit (0, FFTProcessor::fftSize, (int) (skewedProportionX * (float) FFTProcessor::fftSize));
-            auto level = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (processorRef.fft[0].fftDisplayable[fftDataIndex])
-                                                               - juce::Decibels::gainToDecibels ((float) FFTProcessor::fftSize)),
-                                     mindB, maxdB, 0.0f, 1.0f);
-            scopeData[i] = level;
+    float scopeDataToStore[FFTProcessor::fftSize];
+    for (int i = 0; i < FFTProcessor::fftSize; ++i)
+    {
+        auto skewedProportionX = 1.0f - std::exp (std::log (1.0f - (float) i / (float) FFTProcessor::fftSize) * 0.1f);
+        auto fftDataIndex = juce::jlimit (0, FFTProcessor::fftSize, (int) (skewedProportionX * (float) FFTProcessor::fftSize));
+        auto level = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (processorRef.fft[0].fftDisplayable[fftDataIndex])
+                                                            - juce::Decibels::gainToDecibels ((float) FFTProcessor::fftSize)),
+                                    mindB, maxdB, 0.0f, 1.0f);
+        scopeDataToStore[i] = level;
+
+        std::vector<float> vec;
+        for (int j = scopeDataStorage.size() -1; j>=0; j--){
+            // get i index from the stored FFTs
+            vec.push_back((float) scopeDataStorage[j][i]);
         }
+        vec.push_back(level);
+        float average = std::accumulate(vec.begin(), vec.end(), 0.0) / vec.size();
+        scopeData[i] = average;
+    }
+
+    // store
+    scopeDataStorage.push_back(scopeDataToStore);
+    if (scopeDataStorage.size() == scopeDataStorageMaxSize)
+        scopeDataStorage.erase(scopeDataStorage.begin());
+
+    std::cout << scopeDataStorage.size() << std::endl;
 }
 
 void PluginEditor::timerCallback()
@@ -68,9 +88,6 @@ void PluginEditor::drawFrame (juce::Graphics& g)
                                 juce::jmap (scopeData[i - 1], 0.0f, 1.0f, (float) height, 0.0f),
                         (float) juce::jmap (i,     0, FFTProcessor::fftSize - 1, 0, width),
                                 juce::jmap (scopeData[i],     0.0f, 1.0f, (float) height, 0.0f) });
-
-        if (std::isnan (scopeData[i]))
-            std::cout << i << std::endl;;
     }
 }
 

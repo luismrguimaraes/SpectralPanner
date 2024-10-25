@@ -7,9 +7,6 @@ FFTProcessor::FFTProcessor() :
     // Note that the window is of length `fftSize + 1` because JUCE's windows
     // are symmetrical, which is wrong for overlap-add processing. To make the
     // window periodic, set size to 1025 but only use the first 1024 samples.
-
-    for (int i = 0; i < fftSize; i++)
-        fftDisplayable[i] = 0.f;
 }
 
 void FFTProcessor::reset()
