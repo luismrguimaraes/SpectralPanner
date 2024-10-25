@@ -5,9 +5,10 @@
 #include "melatonin_inspector/melatonin_inspector.h"
 
 #include "FFTProcessor.h"
+#include "FFTVisualizer.h"
 
 //==============================================================================
-class PluginEditor : public juce::AudioProcessorEditor, juce::Timer
+class PluginEditor : public juce::AudioProcessorEditor
 {
 public:
     explicit PluginEditor (PluginProcessor&);
@@ -16,7 +17,6 @@ public:
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
-    void timerCallback() override;
 
 private:
     // This reference is provided as a quick way for your editor to
@@ -27,12 +27,16 @@ private:
 
     juce::Slider delayMsSlider;
 
-    juce::Slider spectralSlider;
-    float scopeDataL[FFTProcessor::fftSize];
-    float scopeDataR[FFTProcessor::fftSize];
+    juce::Slider spectralSlider{juce::Slider::LinearHorizontal, juce::Slider::TextBoxBelow};
+    // float scopeDataL[FFTProcessor::fftSize];
+    // float scopeDataR[FFTProcessor::fftSize];
 
-    void drawNextFrameOfSpectrum();
-    void drawFrame(juce::Graphics&);
+    // void drawNextFrameOfSpectrum();
+    // void drawFrame(juce::Graphics&);
+
+    FFTVisualizer fftVis;
+
+    int margin = 100;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };

@@ -119,9 +119,9 @@ void FFTProcessor::processSpectrum(float* data, int _numBins)
         float phase = std::arg(cdata[i]);
 
         // This is where you'd do your spectral processing...
-        if (i > _numBins/2){
+        if (i < _numBins/10){
             // apply panning
-            magnitude *= 1 + *spectralSliderValue;
+            magnitude *= 1.0 + *spectralSliderValue;
         }
 
         // Convert magnitude and phase back into a complex number.
