@@ -22,8 +22,8 @@ void FFTVisualizer::timerCallback()
 
 void FFTVisualizer::drawNextFrameOfSpectrum()
 {
-    auto mindB = JUCE_LIVE_CONSTANT(-100.0f);
-    auto maxdB =    JUCE_LIVE_CONSTANT(0.0f);
+    auto mindB = -100.0f;
+    auto maxdB =    0.0f;
 
     for (int i = 0; i < FFTProcessor::fftSize; ++i)
     {

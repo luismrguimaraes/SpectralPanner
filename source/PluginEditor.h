@@ -6,6 +6,7 @@
 
 #include "FFTProcessor.h"
 #include "FFTVisualizer.h"
+#include "BandComponent.h"
 
 //==============================================================================
 class PluginEditor : public juce::AudioProcessorEditor
@@ -26,17 +27,12 @@ private:
     juce::TextButton inspectButton { "Inspect the UI" };
 
     juce::Slider delayMsSlider;
-
     juce::Slider spectralSlider{juce::Slider::LinearHorizontal, juce::Slider::TextBoxBelow};
-    // float scopeDataL[FFTProcessor::fftSize];
-    // float scopeDataR[FFTProcessor::fftSize];
-
-    // void drawNextFrameOfSpectrum();
-    // void drawFrame(juce::Graphics&);
-
     FFTVisualizer fftVis;
+    BandComponent bandComp1;
+    BandComponent bandComp2;
 
-    int margin = 100;
+    int margin = 60;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };
