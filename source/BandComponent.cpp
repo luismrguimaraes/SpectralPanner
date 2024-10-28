@@ -9,28 +9,29 @@ BandComponent::BandComponent()
 }
 
 void BandComponent::paint(juce::Graphics &g){
-    auto b = getLocalBounds().withTrimmedLeft(margin);
-    g.setColour(juce::Colours::yellowgreen);
-    juce::Rectangle<int> rect(5, b.getHeight());
-    rect.setX(b.getX());
-    g.fillRect(rect);
+    if (isDraggable){
+        auto b = getLocalBounds().withTrimmedLeft(margin);
+        g.setColour(juce::Colours::yellowgreen);
+        juce::Rectangle<int> rect(5, b.getHeight());
+        rect.setX(b.getX());
+        g.fillRect(rect);
+    }
 }
 
 void BandComponent::resized(){
     auto b = getLocalBounds().withTrimmedLeft(margin);
-    slider.setBounds(b.reduced(0, b.getHeight()/3).withX(5 + b.getX()).reduced(20,0));
+    slider.setBounds(b.reduced(0, b.getHeight()/2.25).withX(5 + b.getX()));
 }
 
 void BandComponent::mouseDown(const juce::MouseEvent & 	event){
     std::cout << event.getMouseDownPosition().toString() << std::endl;
 
-    if (event.getMouseDownPosition().getX() <= margin + mouseDownMargin){
+    if (isDraggable){
         std::cout << "draggin" << std::endl;
         dragging = true;
         dragStartX = getBounds().getX();
         dragStartWidth = getBounds().getWidth();
         std::cout << dragStartX << std::endl;
-        //dragger.startDraggingComponent(this, event);
     }
 }
 
@@ -44,8 +45,10 @@ void BandComponent::mouseDrag(const juce::MouseEvent & 	event){
         auto newWidth = dragStartWidth - increment;
         auto newLeft = dragStartX + increment;
         if (newWidth >= 50 && newLeft > minimumLeft)
-            setBounds(getBounds().withLeft(newLeft));
-        else if (newLeft <= minimumLeft)
-            setBounds(getBounds().withLeft(minimumLeft));
+            left = newLeft;
+        else if (newLeft <= minimumLeft){
+            left = minimumLeft;
+        }
+        getParentComponent()->resized();
     }
 }

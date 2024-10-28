@@ -32,9 +32,19 @@ PluginEditor::PluginEditor (PluginProcessor& p)
         *processorRef.fft[1].spectralSliderValue = spectralSlider.getValue();
     };
 
-
     addAndMakeVisible(bandComp1);
+    bandComp1.minimumLeft = margin;
+    bandComp1.isDraggable = false;
     addAndMakeVisible(bandComp2);
+    bandComp2.left = 200;
+    std::cout << bandComp2.left << std::endl;
+    bandComp2.minimumLeft = margin + 50;
+
+    addAndMakeVisible(newBandButton);
+    inspectButton.onClick = [&] {
+        newBand();
+    };
+
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize (800, 600);
@@ -42,6 +52,10 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 
 PluginEditor::~PluginEditor()
 {
+}
+
+void PluginEditor::newBand(){
+    
 }
 
 void PluginEditor::paint (juce::Graphics& g)
@@ -62,12 +76,13 @@ void PluginEditor::resized()
 
     // layout the positions of your child components here
     fftVis.setBounds(b);
-    bandComp1.setBounds(b.withWidth(b.getWidth()/2));
-    bandComp1.minimumLeft = margin;
-    bandComp2.setBounds(b.withTrimmedLeft(b.getWidth()/2));
-    bandComp2.minimumLeft = bandComp1.getBounds().getRight();
 
-    inspectButton.setBounds (b.withSizeKeepingCentre(100, 50));
+    bandComp2.setBounds(b.withLeft(bandComp2.left));
+    bandComp1.setBounds(b.withRight(bandComp2.left));
+
+    //inspectButton.setBounds (b.withSizeKeepingCentre(100, 50));
+
+    newBandButton.setBounds (b.withSizeKeepingCentre(100, 50));
 
     delayMsSlider.setBounds(b);
 

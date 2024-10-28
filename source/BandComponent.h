@@ -17,11 +17,13 @@ public:
     juce::ComponentDragger dragger;
     juce::ComponentBoundsConstrainer dragConstrainer;
 
+    int left;
     int minimumLeft;
+    bool isDraggable = true;
 private:
     juce::Slider slider{juce::Slider::LinearHorizontal, juce::Slider::TextBoxBelow};
     int margin = 0;
-    int mouseDownMargin = 20; 
+    //int mouseDownMargin = 40; 
 
     bool dragging = false;
     int dragStartX;
