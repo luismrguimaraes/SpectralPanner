@@ -49,6 +49,11 @@ void BandComponent::mouseDrag(const juce::MouseEvent & 	event){
         else if (newLeft <= minimumLeft){
             left = minimumLeft;
         }
+        else if (newWidth < 50){
+            // maximum left: dragStartWidth - increment = 50
+            left = dragStartX + dragStartWidth -50;
+        }
+
         getParentComponent()->resized();
     }
 }

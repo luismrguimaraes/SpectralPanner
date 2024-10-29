@@ -32,10 +32,10 @@ private:
     juce::Slider delayMsSlider;
     juce::Slider spectralSlider{juce::Slider::LinearHorizontal, juce::Slider::TextBoxBelow};
     FFTVisualizer fftVis;
-    BandComponent bandComp1;
-    BandComponent bandComp2;
+    std::unique_ptr<BandComponent> bandComp1;
+    //BandComponent bandComp2;
 
-    std::vector<BandComponent> bandComponents;
+    std::vector<std::unique_ptr<BandComponent>> bandComponents;
 
     int margin = 60;
 
