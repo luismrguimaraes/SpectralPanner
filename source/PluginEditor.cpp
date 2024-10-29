@@ -24,6 +24,19 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     delayMsSlider.setRange(0, 2000, 1);
     delayMsSlider.onValueChange = [this] { *processorRef.delayMs = delayMsSlider.getValue();};
 
+    bandComp1 = std::make_unique<BandComponent>();
+    addAndMakeVisible(*bandComp1);
+    bandComp1->isDraggable = false;
+    bandComp1->left = margin;
+    bandComp1->minimumLeft = bandComp1->left;
+    bandComponents.push_back(std::move(bandComp1));
+
+    addAndMakeVisible(newBandButton);
+    newBandButton.onClick = [&] {
+        newBand();
+    };
+
+
     addAndMakeVisible(spectralSlider);
     spectralSlider.setRange(-1, 1);
     spectralSlider.setValue(0.0);
@@ -32,17 +45,6 @@ PluginEditor::PluginEditor (PluginProcessor& p)
         *processorRef.fft[1].spectralSliderValue = spectralSlider.getValue();
     };
 
-    bandComp1 = std::make_unique<BandComponent>();
-    addAndMakeVisible(*bandComp1);
-    bandComp1->minimumLeft = margin;
-    bandComp1->isDraggable = false;
-    bandComp1->left = 0;
-    bandComponents.push_back(std::move(bandComp1));
-
-    addAndMakeVisible(newBandButton);
-    newBandButton.onClick = [&] {
-        newBand();
-    };
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
@@ -100,10 +102,7 @@ void PluginEditor::resized()
         // update minimumLeft
         for (int i = 0; i < bandComponents.size() -1; ++i){
             auto newMinLeft = 0;
-            if (i == 0)
-                newMinLeft = margin + bandComponents[i]->left + 50;
-            else
-                newMinLeft = bandComponents[i]->left + 50;
+            newMinLeft = bandComponents[i]->left + 50;
             
             bandComponents[i+1]->minimumLeft = newMinLeft;
         }
@@ -124,13 +123,28 @@ void PluginEditor::resized()
                 bandComponents[i]->setBounds(b.withRight(bandComponents[i+1]->left).withLeft(bandComponents[i]->left));
             }
         }
+
+        std::cout << ((float)(bandComponents[1]->left - margin) / b.getWidth()) * FFTProcessor::fftSize  * (processorRef.getSampleRate() / (double)FFTProcessor::fftSize) <<  std::endl;
     }
+
+    updateProcessorValues();
 
     //inspectButton.setBounds (b.withSizeKeepingCentre(100, 50));
 
     newBandButton.setBounds (getLocalBounds().withWidth(100).withHeight(50).withY(getLocalBounds().getBottom() - 50));
 
     delayMsSlider.setBounds(b);
-
     spectralSlider.setBounds(b.withHeight(100));
+}
+
+void PluginEditor::mouseDoubleClick (const juce::MouseEvent &event){
+    newBand();
+}
+
+void PluginEditor::updateProcessorValues(){
+    for (int i = 0; i < FFTProcessor::fftSize; ++i){
+        
+    }
+    // *processorRef.fft[0].spectralSliderValue = -spectralSlider.getValue();
+    // *processorRef.fft[1].spectralSliderValue = spectralSlider.getValue();
 }

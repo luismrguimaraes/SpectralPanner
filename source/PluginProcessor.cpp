@@ -105,8 +105,13 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     delay.reset();
 
     setLatencySamples(fft[0].getLatencyInSamples());
+
     fft[0].reset();
+    fft[0].setSampleRate(sampleRate);
     fft[1].reset();
+    fft[1].setSampleRate(sampleRate);
+    
+    std::cout << "prep to pla" << std::endl;
 }
 
 void PluginProcessor::releaseResources()

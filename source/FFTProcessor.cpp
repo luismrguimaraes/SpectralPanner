@@ -19,6 +19,10 @@ void FFTProcessor::reset()
     std::fill(outputFifo.begin(), outputFifo.end(), 0.0f);
 }
 
+void FFTProcessor::setSampleRate(int _sampleRate){
+    sampleRate = _sampleRate;
+}
+
 void FFTProcessor::processBlock(float* data, int numSamples, bool bypassed)
 {
     for (int i = 0; i < numSamples; ++i) {
@@ -119,7 +123,8 @@ void FFTProcessor::processSpectrum(float* data, int _numBins)
         float phase = std::arg(cdata[i]);
 
         // This is where you'd do your spectral processing...
-        if (i < _numBins/10){
+
+        if (sampleRate/fftSize * i > 10000){
             // apply panning
             magnitude *= 1.0 + *spectralSliderValue;
         }

@@ -10,7 +10,7 @@ BandComponent::BandComponent()
 
 void BandComponent::paint(juce::Graphics &g){
     if (isDraggable){
-        auto b = getLocalBounds().withTrimmedLeft(margin);
+        auto b = getLocalBounds();
         g.setColour(juce::Colours::yellowgreen);
         juce::Rectangle<int> rect(5, b.getHeight());
         rect.setX(b.getX());
@@ -19,8 +19,12 @@ void BandComponent::paint(juce::Graphics &g){
 }
 
 void BandComponent::resized(){
-    auto b = getLocalBounds().withTrimmedLeft(margin);
-    slider.setBounds(b.reduced(0, b.getHeight()/2.25).withX(5 + b.getX()));
+    auto b = getLocalBounds();
+
+    if (isDraggable)
+        slider.setBounds(b.reduced(0, b.getHeight()/2.25).withX(5 + b.getX()));
+    else
+        slider.setBounds(b.reduced(0, b.getHeight()/2.25));
 }
 
 void BandComponent::mouseDown(const juce::MouseEvent & 	event){
@@ -56,4 +60,8 @@ void BandComponent::mouseDrag(const juce::MouseEvent & 	event){
 
         getParentComponent()->resized();
     }
+}
+
+void BandComponent::mouseDoubleClick (const juce::MouseEvent &event){
+    getParentComponent()->mouseDoubleClick(event);
 }

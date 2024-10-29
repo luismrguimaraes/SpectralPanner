@@ -19,6 +19,7 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
+    void updateProcessorValues();
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
@@ -36,6 +37,8 @@ private:
     //BandComponent bandComp2;
 
     std::vector<std::unique_ptr<BandComponent>> bandComponents;
+
+    void mouseDoubleClick (const juce::MouseEvent &event) override;
 
     int margin = 60;
 

@@ -18,6 +18,8 @@ public:
     float processSample(float sample, bool bypassed);
     void processBlock(float* data, int numSamples, bool bypassed);
 
+    void setSampleRate(int sampleRate);
+
     // The FFT has 2^order points and fftSize/2 + 1 bins.
     static constexpr int fftOrder = 10;
     static constexpr int fftSize = 1 << fftOrder;      // 1024 samples
@@ -51,6 +53,8 @@ private:
     // Circular buffers for incoming and outgoing audio data.
     std::array<float, fftSize> inputFifo;
     std::array<float, fftSize> outputFifo;
+
+    int sampleRate;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FFTProcessor)
 };
