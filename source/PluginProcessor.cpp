@@ -1,20 +1,18 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-
-
 //==============================================================================
 PluginProcessor::PluginProcessor()
-     : AudioProcessor (BusesProperties()
-                     #if ! JucePlugin_IsMidiEffect
-                      #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                      #endif
-                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-                     #endif
-                       ), delay(1024)
+    : AudioProcessor (BusesProperties()
+#if !JucePlugin_IsMidiEffect
+    #if !JucePlugin_IsSynth
+                          .withInput ("Input", juce::AudioChannelSet::stereo(), true)
+    #endif
+                          .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
+#endif
+            ),
+      delay (1024)
 {
-
 }
 
 PluginProcessor::~PluginProcessor()
@@ -29,29 +27,29 @@ const juce::String PluginProcessor::getName() const
 
 bool PluginProcessor::acceptsMidi() const
 {
-   #if JucePlugin_WantsMidiInput
+#if JucePlugin_WantsMidiInput
     return true;
-   #else
+#else
     return false;
-   #endif
+#endif
 }
 
 bool PluginProcessor::producesMidi() const
 {
-   #if JucePlugin_ProducesMidiOutput
+#if JucePlugin_ProducesMidiOutput
     return true;
-   #else
+#else
     return false;
-   #endif
+#endif
 }
 
 bool PluginProcessor::isMidiEffect() const
 {
-   #if JucePlugin_IsMidiEffect
+#if JucePlugin_IsMidiEffect
     return true;
-   #else
+#else
     return false;
-   #endif
+#endif
 }
 
 double PluginProcessor::getTailLengthSeconds() const
@@ -61,8 +59,8 @@ double PluginProcessor::getTailLengthSeconds() const
 
 int PluginProcessor::getNumPrograms()
 {
-    return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
-                // so this should be at least 1, even if you're not really implementing programs.
+    return 1; // NB: some hosts don't cope very well if you tell them there are 0 programs,
+        // so this should be at least 1, even if you're not really implementing programs.
 }
 
 int PluginProcessor::getCurrentProgram()
@@ -88,7 +86,7 @@ void PluginProcessor::changeProgramName (int index, const juce::String& newName)
 
 juce::AudioProcessorParameter* PluginProcessor::getBypassParameter() const
 {
-    return apvts.getParameter("Bypass");
+    return apvts.getParameter ("Bypass");
 }
 
 //==============================================================================
@@ -100,18 +98,16 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 
     previousDelayMs = *delayMs;
 
-    delaySamples = *delayMs*0.001*(int)sampleRate;
-    delay.resize(delaySamples + 1);
+    delaySamples = *delayMs * 0.001 * (int) sampleRate;
+    delay.resize (delaySamples + 1);
     delay.reset();
 
-    setLatencySamples(fft[0].getLatencyInSamples());
+    setLatencySamples (fft[0].getLatencyInSamples());
 
     fft[0].reset();
-    fft[0].setSampleRate(sampleRate);
+    fft[0].setSampleRate (sampleRate);
     fft[1].reset();
-    fft[1].setSampleRate(sampleRate);
-    
-    std::cout << "prep to pla" << std::endl;
+    fft[1].setSampleRate (sampleRate);
 }
 
 void PluginProcessor::releaseResources()
@@ -122,34 +118,35 @@ void PluginProcessor::releaseResources()
 
 bool PluginProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
-  #if JucePlugin_IsMidiEffect
+#if JucePlugin_IsMidiEffect
     juce::ignoreUnused (layouts);
     return true;
-  #else
+#else
     // This is the place where you check if the layout is supported.
     // In this template code we only support mono or stereo.
     if (/*layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-     &&*/ layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+     &&*/
+        layouts.getMainOutputChannelSet()
+        != juce::AudioChannelSet::stereo())
         return false;
 
-    // This checks if the input layout matches the output layout
-   #if ! JucePlugin_IsSynth
+        // This checks if the input layout matches the output layout
+    #if !JucePlugin_IsSynth
     if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
         return false;
-   #endif
+    #endif
 
     return true;
-  #endif
+#endif
 }
 
-
 void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
-                                              juce::MidiBuffer& midiMessages)
+    juce::MidiBuffer& midiMessages)
 {
     juce::ignoreUnused (midiMessages);
 
     juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
+    auto totalNumInputChannels = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
     // In case we have more outputs than inputs, this code clears any output
@@ -169,9 +166,10 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // interleaved by keeping the same state.
 
     // check param changes
-    if (previousDelayMs != *delayMs){
-        delaySamples = *delayMs*0.001* getSampleRate();
-        delay.resize(delaySamples + 1);
+    if (previousDelayMs != *delayMs)
+    {
+        delaySamples = *delayMs * 0.001 * getSampleRate();
+        delay.resize (delaySamples + 1);
         delay.reset();
     }
 
@@ -182,11 +180,12 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         // ..do something to the data...
 
         // delay processing on the left channel
-        if (channel == 0){
+        if (channel == 0)
+        {
             // for (int i = 0; i < buffer.getNumSamples(); i++){
             //     float delayed = delay.read(delaySamples);
-                
-            //     float sum = channelData[i] + delayed*decayGain; 
+
+            //     float sum = channelData[i] + delayed*decayGain;
             //     delay.write(sum);
 
             //     channelData[i] = channelData[i] * (1 -wet) + delayed * wet;
@@ -198,20 +197,21 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             //     stftReady.store(true);
             // }
         }
-
     }
 
     auto numSamples = buffer.getNumSamples();
 
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i) {
-        buffer.clear(i, 0, numSamples);
+    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+    {
+        buffer.clear (i, 0, numSamples);
     }
 
-    bool bypassed = apvts.getRawParameterValue("Bypass")->load();
+    bool bypassed = apvts.getRawParameterValue ("Bypass")->load();
 
-    for (int channel = 0; channel < totalNumInputChannels; ++channel) {
-        auto* channelData = buffer.getWritePointer(channel);
-        fft[channel].processBlock(channelData, numSamples, bypassed);
+    for (int channel = 0; channel < totalNumInputChannels; ++channel)
+    {
+        auto* channelData = buffer.getWritePointer (channel);
+        fft[channel].processBlock (channelData, numSamples, bypassed);
     }
 
     // update "previousParams"
@@ -235,22 +235,24 @@ void PluginProcessor::getStateInformation (juce::MemoryBlock& destData)
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
-    juce::MemoryOutputStream (destData, true).writeInt (*delayMs);
+
+    //juce::MemoryOutputStream (destData, true).writeInt (*delayMs);
 }
 
 void PluginProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
-    *delayMs = juce::MemoryInputStream (data, static_cast<size_t> (sizeInBytes), false).readInt();
+
+    //*delayMs = juce::MemoryInputStream (data, static_cast<size_t> (sizeInBytes), false).readInt();
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParameterLayout()
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
-    layout.add(std::make_unique<juce::AudioParameterBool>(
-        juce::ParameterID("Bypass", 1),
+    layout.add (std::make_unique<juce::AudioParameterBool> (
+        juce::ParameterID ("Bypass", 1),
         "Bypass",
         false));
 

@@ -32,15 +32,17 @@ private:
 
     juce::Slider delayMsSlider;
     juce::Slider spectralSlider{juce::Slider::LinearHorizontal, juce::Slider::TextBoxBelow};
+    juce::Slider freqMaxSlider;
     FFTVisualizer fftVis;
     std::unique_ptr<BandComponent> bandComp1;
     //BandComponent bandComp2;
 
     std::vector<std::unique_ptr<BandComponent>> bandComponents;
+    double getFreqFromLeft(int left);
 
     void mouseDoubleClick (const juce::MouseEvent &event) override;
 
-    int margin = 60;
+    int margin = 30;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };

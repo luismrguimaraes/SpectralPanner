@@ -1,17 +1,17 @@
 #pragma once
 
-#include <juce_audio_processors/juce_audio_processors.h>
 #include "FFTProcessor.h"
+#include <juce_audio_processors/juce_audio_processors.h>
 
 // import Signalsmith's DSP library, and ignore its warnings
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Weverything"
-#include "dsp/spectral.h"
 #include "dsp/delay.h"
+#include "dsp/spectral.h"
 #pragma clang diagnostic pop
 
 #if (MSVC)
-#include "ipps.h"
+    #include "ipps.h"
 #endif
 
 class PluginProcessor : public juce::AudioProcessor
@@ -62,12 +62,11 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 
     int previousDelayMs;
-	double decayGain = 0.5;
+    double decayGain = 0.5;
 
     float wet = 0.5;
 
-	int delaySamples;
+    int delaySamples;
     using Delay = signalsmith::delay::Delay<float, signalsmith::delay::InterpolatorNearest>;
     Delay delay;
-
 };

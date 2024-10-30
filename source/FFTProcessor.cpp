@@ -1,8 +1,7 @@
 #include "FFTProcessor.h"
 
-FFTProcessor::FFTProcessor() :
-    fft(fftOrder),
-    window(fftSize + 1, juce::dsp::WindowingFunction<float>::WindowingMethod::hann, false)
+FFTProcessor::FFTProcessor() : fft (fftOrder),
+                               window (fftSize + 1, juce::dsp::WindowingFunction<float>::WindowingMethod::hann, false)
 {
     // Note that the window is of length `fftSize + 1` because JUCE's windows
     // are symmetrical, which is wrong for overlap-add processing. To make the
@@ -15,22 +14,34 @@ void FFTProcessor::reset()
     pos = 0;
 
     // Zero out the circular buffers.
-    std::fill(inputFifo.begin(), inputFifo.end(), 0.0f);
-    std::fill(outputFifo.begin(), outputFifo.end(), 0.0f);
-}
+    std::fill (inputFifo.begin(), inputFifo.end(), 0.0f);
+    std::fill (outputFifo.begin(), outputFifo.end(), 0.0f);
 
-void FFTProcessor::setSampleRate(int _sampleRate){
-    sampleRate = _sampleRate;
-}
-
-void FFTProcessor::processBlock(float* data, int numSamples, bool bypassed)
-{
-    for (int i = 0; i < numSamples; ++i) {
-        data[i] = processSample(data[i], bypassed);
+    // reset spectral multipliers arrays
+    spectralMultipliers.clear();
+    newSpectralMultipliers.clear();
+    spectralMultipliersChanged.store (false);
+    for (int i = 0; i < numBins; ++i)
+    {
+        spectralMultipliers.push_back (0.0);
+        newSpectralMultipliers.push_back (0.0);
     }
 }
 
-float FFTProcessor::processSample(float sample, bool bypassed)
+void FFTProcessor::setSampleRate (int _sampleRate)
+{
+    sampleRate = _sampleRate;
+}
+
+void FFTProcessor::processBlock (float* data, int numSamples, bool bypassed)
+{
+    for (int i = 0; i < numSamples; ++i)
+    {
+        data[i] = processSample (data[i], bypassed);
+    }
+}
+
+float FFTProcessor::processSample (float sample, bool bypassed)
 {
     // Push the new sample value into the input FIFO.
     inputFifo[pos] = sample;
@@ -47,90 +58,99 @@ float FFTProcessor::processSample(float sample, bool bypassed)
 
     // Advance the FIFO index and wrap around if necessary.
     pos += 1;
-    if (pos == fftSize) {
+    if (pos == fftSize)
+    {
         pos = 0;
     }
 
     // Process the FFT frame once we've collected hopSize samples.
     count += 1;
-    if (count == hopSize) {
+    if (count == hopSize)
+    {
         count = 0;
-        processFrame(bypassed);
+        processFrame (bypassed);
     }
 
     return outputSample;
 }
 
-void FFTProcessor::processFrame(bool bypassed)
+void FFTProcessor::processFrame (bool bypassed)
 {
     const float* inputPtr = inputFifo.data();
     float* fftPtr = fftData.data();
 
     // Copy the input FIFO into the FFT working space in two parts.
-    std::memcpy(fftPtr, inputPtr + pos, (fftSize - pos) * sizeof(float));
-    if (pos > 0) {
-        std::memcpy(fftPtr + fftSize - pos, inputPtr, pos * sizeof(float));
+    std::memcpy (fftPtr, inputPtr + pos, (fftSize - pos) * sizeof (float));
+    if (pos > 0)
+    {
+        std::memcpy (fftPtr + fftSize - pos, inputPtr, pos * sizeof (float));
     }
 
     // Apply the window to avoid spectral leakage.
-    window.multiplyWithWindowingTable(fftPtr, fftSize);
+    window.multiplyWithWindowingTable (fftPtr, fftSize);
 
-    if (!bypassed) {
+    if (!bypassed)
+    {
         // Perform the forward FFT.
-        fft.performRealOnlyForwardTransform(fftPtr, true);
+        fft.performRealOnlyForwardTransform (fftPtr, true);
 
         // Do stuff with the FFT data.
-        processSpectrum(fftPtr, numBins);
-
-        // fill/update fftDisplayable
-        for (int i = 0 ; i < fftSize; ++i){
-            fftDisplayable[i] = fftPtr[i];
-        }
+        processSpectrum (fftPtr, numBins);
 
         // Perform the inverse FFT.
-        fft.performRealOnlyInverseTransform(fftPtr);
+        fft.performRealOnlyInverseTransform (fftPtr);
     }
 
     // Apply the window again for resynthesis.
-    window.multiplyWithWindowingTable(fftPtr, fftSize);
+    window.multiplyWithWindowingTable (fftPtr, fftSize);
 
     // Scale down the output samples because of the overlapping windows.
-    for (int i = 0; i < fftSize; ++i) {
+    for (int i = 0; i < fftSize; ++i)
+    {
         fftPtr[i] *= windowCorrection;
     }
 
     // Add the IFFT results to the output FIFO.
-    for (int i = 0; i < pos; ++i) {
+    for (int i = 0; i < pos; ++i)
+    {
         outputFifo[i] += fftData[i + fftSize - pos];
     }
-    for (int i = 0; i < fftSize - pos; ++i) {
+    for (int i = 0; i < fftSize - pos; ++i)
+    {
         outputFifo[i + pos] += fftData[i];
     }
 
-    readyToDisplay.store(true);
+    readyToDisplay.store (true);
 }
 
-void FFTProcessor::processSpectrum(float* data, int _numBins)
+void FFTProcessor::processSpectrum (float* data, int _numBins)
 {
     // The spectrum data is floats organized as [re, im, re, im, ...]
     // but it's easier to deal with this as std::complex values.
-    auto* cdata = reinterpret_cast<std::complex<float>*>(data);
+    auto* cdata = reinterpret_cast<std::complex<float>*> (data);
 
-    for (int i = 0; i < _numBins; ++i) {
+    for (int i = 0; i < _numBins; ++i)
+    {
         // Usually we want to work with the magnitude and phase rather
         // than the real and imaginary parts directly.
-        float magnitude = std::abs(cdata[i]);
-        float phase = std::arg(cdata[i]);
+        float magnitude = std::abs (cdata[i]);
+        float phase = std::arg (cdata[i]);
 
         // This is where you'd do your spectral processing...
 
-        if (sampleRate/fftSize * i > 10000){
+        if (sampleRate / fftSize * i > 10000)
+        {
             // apply panning
             magnitude *= 1.0 + *spectralSliderValue;
         }
+        // if (i == 0)
+        //     magnitude *= 1.0 + *spectralSliderValue;
+
+        // fill/update fftDisplayable
+        fftDisplayable[i] = magnitude;
 
         // Convert magnitude and phase back into a complex number.
-        cdata[i] = std::polar(magnitude, phase);
+        cdata[i] = std::polar (magnitude, phase);
     }
 
     // std::cout << *spectralSliderValue << std::endl;
