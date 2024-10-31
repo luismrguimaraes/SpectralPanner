@@ -62,8 +62,6 @@ void FFTVisualizer::drawFrame (juce::Graphics& g)
     // every 1000k or so, draw a vertical line
     for (int freq = 1000; freq < freqMax; freq += 1000)
     {
-        int index = freq * FFTProcessor::fftSize / processorRef->getSampleRate();
-
         g.setColour (juce::Colours::grey);
         g.drawLine ({ (float) juce::jmap (freq, 0, (int) freqMax, 0, width),
             (float) height,

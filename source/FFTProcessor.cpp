@@ -143,8 +143,6 @@ void FFTProcessor::processSpectrum (float* data, int _numBins)
             // apply panning
             magnitude *= 1.0 + *spectralSliderValue;
         }
-        // if (i == 0)
-        //     magnitude *= 1.0 + *spectralSliderValue;
 
         // fill/update fftDisplayable
         fftDisplayable[i] = magnitude;

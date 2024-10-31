@@ -120,9 +120,6 @@ void PluginEditor::resized()
         // set bounds
         for (int i = bandComponents.size() - 1; i >= 0; --i)
         {
-            auto left = 0;
-            auto right = 0;
-
             if (i == 0)
             { // left-most band
                 bandComponents[i]->setBounds (b.withRight (bandComponents[i + 1]->left));

@@ -21,11 +21,11 @@ public:
     void setSampleRate (int sampleRate);
 
     // The FFT has 2^order points and fftSize/2 + 1 bins.
-    static constexpr int fftOrder = 7;
-    static constexpr int fftSize = 1 << fftOrder; // 1024 samples
-    static constexpr int numBins = fftSize / 2 + 1; // 513 bins
+    static constexpr int fftOrder = 12;
+    static constexpr int fftSize = 1 << fftOrder;
+    static constexpr int numBins = fftSize / 2 + 1;
     static constexpr int overlap = 4; // 75% overlap
-    static constexpr int hopSize = fftSize / overlap; // 256 samples
+    static constexpr int hopSize = fftSize / overlap;
 
     std::array<float, fftSize> fftDisplayable {};
     std::atomic<bool> readyToDisplay = false;
