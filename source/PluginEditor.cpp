@@ -53,9 +53,9 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize (800, 600);
-    setResizable (true, true);
-    setResizeLimits (500, 300, 10000, 10000);
+    setSize (800, 500);
+    //setResizable (true, true);
+    //setResizeLimits (500, 300, 10000, 10000);
 }
 
 PluginEditor::~PluginEditor()
@@ -159,14 +159,10 @@ void PluginEditor::mouseDoubleClick (const juce::MouseEvent& event)
 double inline PluginEditor::getFreqFromLeft (int left)
 {
     auto b = getLocalBounds().reduced (margin);
-    int indexMax = fftVis.freqMax * FFTProcessor::fftSize / processorRef.getSampleRate();
 
-    auto i = (float) (left - margin) / b.getWidth() * indexMax;
-    auto freq = i * processorRef.getSampleRate() / (double) FFTProcessor::fftSize;
+    auto value = juce::jmap ((double) left, (double) b.getX(), (double) b.getX() + b.getWidth(), 0.0, 1.0);
 
-    // (float) juce::jmap (freq, 0, (int) freqMax, 0, b.getWidth())
-
-    return freq;
+    return value * fftVis.freqMax;
 }
 
 void PluginEditor::updateProcessorValues()
