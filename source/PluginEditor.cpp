@@ -45,10 +45,17 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     };
 
     addAndMakeVisible (freqMaxSlider);
-    freqMaxSlider.setRange (10000, 30000);
-    freqMaxSlider.setValue (22000);
+    freqMaxSlider.setRange (1000, 20000);
+    freqMaxSlider.setValue (20000);
     freqMaxSlider.onValueChange = [this] {
         fftVis.freqMax = freqMaxSlider.getValue();
+    };
+
+    addAndMakeVisible (skewFactorSlider);
+    skewFactorSlider.setRange (0.1, 1);
+    skewFactorSlider.setValue (1);
+    skewFactorSlider.onValueChange = [this] {
+        fftVis.skewFactor = skewFactorSlider.getValue();
     };
 
     // Make sure that before the constructor has finished, you've set the
@@ -101,9 +108,6 @@ void PluginEditor::resized()
     // layout the positions of your child components here
     fftVis.setBounds (b);
 
-    //bandComp2.setBounds(b.withLeft(bandComp2.left));
-    //bandComp1.setBounds(b.withRight(bandComp2.left));
-
     if (bandComponents.size() == 1)
         bandComponents[0]->setBounds (b);
     else
@@ -148,7 +152,8 @@ void PluginEditor::resized()
     delayMsSlider.setBounds (b);
     spectralSlider.setBounds (b.withHeight (100));
 
-    freqMaxSlider.setBounds (b.withWidth (b.getWidth() / 2).withX (b.getWidth() / 2).withHeight (50).withY (b.getHeight() + 25));
+    freqMaxSlider.setBounds (b.withWidth (b.getWidth() / 2).withX (b.getWidth() / 2 + 50).withHeight (50).withY (b.getHeight() + 25));
+    skewFactorSlider.setBounds (b.withWidth (b.getWidth() / 2).withHeight (50).withY (b.getHeight() + 25));
 }
 
 void PluginEditor::mouseDoubleClick (const juce::MouseEvent& event)
@@ -167,9 +172,24 @@ double inline PluginEditor::getFreqFromLeft (int left)
 
 void PluginEditor::updateProcessorValues()
 {
-    for (int i = 0; i < FFTProcessor::fftSize; ++i)
+    std::vector<float> bandsFreqs;
+
+    for (int i = 0; i < bandComponents.size(); ++i)
     {
+        bandsFreqs.push_back (getFreqFromLeft (bandComponents[i]->left));
     }
+
+    // int bandIndex = 0;
+    // for (int i = 0; i < FFTProcessor::numBins; ++i)
+    // {
+    //     // Left
+    //     processorRef.fft[0].newSpectralMultipliers[i] =
+    //         // Right
+    //         processorRef.fft[1].newSpectralMultipliers[i] =
+    // }
+
+    processorRef.fft[0].spectralMultipliersChanged.store (true);
+    processorRef.fft[1].spectralMultipliersChanged.store (true);
     // *processorRef.fft[0].spectralSliderValue = -spectralSlider.getValue();
     // *processorRef.fft[1].spectralSliderValue = spectralSlider.getValue();
 }

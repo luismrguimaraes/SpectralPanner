@@ -4,6 +4,7 @@
 //#include <juce_gui_basics/components/juce_Component.h>
 #include "FFTProcessor.h"
 #include "PluginProcessor.h"
+#include "utils.h"
 
 class FFTVisualizer : public juce::Component, juce::Timer
 {
@@ -19,6 +20,7 @@ public:
     PluginProcessor* processorRef;
 
     float freqMax = 30000;
+    float skewFactor = 1;
 
 private:
     void drawNextFrameOfSpectrum();

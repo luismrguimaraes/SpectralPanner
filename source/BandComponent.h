@@ -16,6 +16,7 @@ public:
     int left;
     int minimumLeft;
     bool isDraggable = true;
+
 private:
     void mouseDown(const juce::MouseEvent & 	event	) override;
     void mouseDrag(const juce::MouseEvent &event)  override;

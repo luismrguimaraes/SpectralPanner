@@ -30,8 +30,9 @@ void FFTVisualizer::drawNextFrameOfSpectrum()
 
     for (int i = 0; i < FFTProcessor::numBins; ++i)
     {
-        auto skewedProportionX = 1.0f - std::exp (std::log (1.0f - (float) i / (float) FFTProcessor::numBins) * 1.f);
-        auto fftDataIndex = juce::jlimit (0, FFTProcessor::numBins, (int) (skewedProportionX * (float) FFTProcessor::numBins));
+        // auto skewedProportionX = 1.0f - std::exp (std::log (1.0f - (float) i / (float) FFTProcessor::numBins) * skewFactor);
+        // auto fftDataIndex = juce::jlimit (0, FFTProcessor::numBins, (int) (skewedProportionX * (float) FFTProcessor::numBins));
+        auto fftDataIndex = skewIndex (i, skewFactor);
 
         auto levelL = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (processorRef->fft[0].fftDisplayable[fftDataIndex]) - juce::Decibels::gainToDecibels ((float) FFTProcessor::fftSize)),
             mindB,
@@ -51,10 +52,9 @@ void FFTVisualizer::drawNextFrameOfSpectrum()
 
 void FFTVisualizer::drawFrame (juce::Graphics& g)
 {
-    auto b = getLocalBounds();
-
     // index that has freqMax: sampleRate / fftSize * i = freqMax
     int indexMax = freqMax * FFTProcessor::fftSize / processorRef->getSampleRate();
+    indexMax = skewIndex (indexMax, 1 / skewFactor);
 
     auto width = getLocalBounds().getWidth();
     auto height = getLocalBounds().getHeight();
@@ -71,16 +71,18 @@ void FFTVisualizer::drawFrame (juce::Graphics& g)
 
     for (int i = 1; i < FFTProcessor::numBins; ++i)
     {
+        auto iSkewed = skewIndex (i, 1 / skewFactor);
+
         g.setColour (juce::Colours::beige);
-        g.drawLine ({ (float) juce::jmap (i - 1, 0, indexMax, 0, width),
+        g.drawLine ({ (float) juce::jmap (iSkewed - 1, 0, indexMax, 0, width),
             juce::jmap (scopeDataL[i - 1], 0.0f, 1.0f, (float) height, 0.0f),
-            (float) juce::jmap (i, 0, indexMax, 0, width),
+            (float) juce::jmap (iSkewed, 0, indexMax, 0, width),
             juce::jmap (scopeDataL[i], 0.0f, 1.0f, (float) height, 0.0f) });
 
         g.setColour (juce::Colours::darkcyan);
-        g.drawLine ({ (float) juce::jmap (i - 1, 0, indexMax, 0, width),
+        g.drawLine ({ (float) juce::jmap (iSkewed - 1, 0, indexMax, 0, width),
             juce::jmap (scopeDataR[i - 1], 0.0f, 1.0f, (float) height, 0.0f),
-            (float) juce::jmap (i, 0, indexMax, 0, width),
+            (float) juce::jmap (iSkewed, 0, indexMax, 0, width),
             juce::jmap (scopeDataR[i], 0.0f, 1.0f, (float) height, 0.0f) });
     }
 }
