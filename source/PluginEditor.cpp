@@ -1,7 +1,7 @@
 #include "PluginEditor.h"
 
 PluginEditor::PluginEditor (PluginProcessor& p)
-    : AudioProcessorEditor (&p), processorRef (p), delayMsSlider()
+    : AudioProcessorEditor (&p), processorRef (p)
 {
     juce::ignoreUnused (processorRef);
 
@@ -19,10 +19,6 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 
         inspector->setVisible (true);
     };
-
-    //addAndMakeVisible (delayMsSlider);
-    delayMsSlider.setRange (0, 2000, 1);
-    delayMsSlider.onValueChange = [this] { *processorRef.delayMs = delayMsSlider.getValue(); };
 
     bandComp1 = std::make_unique<BandComponent>();
     addAndMakeVisible (*bandComp1);
@@ -46,10 +42,10 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 
     addAndMakeVisible (freqMaxSlider);
     freqMaxSlider.setRange (1000, 20000);
-    freqMaxSlider.setValue (20000);
     freqMaxSlider.onValueChange = [this] {
         fftVis.freqMax = freqMaxSlider.getValue();
     };
+    freqMaxSlider.setValue (20000);
 
     addAndMakeVisible (skewFactorSlider);
     skewFactorSlider.setRange (0.1, 1);
@@ -92,7 +88,7 @@ void PluginEditor::newBand()
 void PluginEditor::paint (juce::Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+    g.fillAll (juce::Colours::black);
 
     // g.setColour (juce::Colours::white);
     // g.setFont (16.0f);
@@ -145,7 +141,7 @@ void PluginEditor::resized()
 
     updateProcessorValues();
 
-    //inspectButton.setBounds (b.withSizeKeepingCentre(100, 50));
+    inspectButton.setBounds (getLocalBounds().withWidth (100).withHeight (50).withY (0));
 
     newBandButton.setBounds (getLocalBounds().withWidth (100).withHeight (50).withY (getLocalBounds().getBottom() - 50));
 

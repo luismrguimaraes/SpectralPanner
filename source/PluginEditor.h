@@ -45,7 +45,7 @@ private:
 
     void mouseDoubleClick (const juce::MouseEvent& event) override;
 
-    int margin = 30;
+    int margin = 50;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };

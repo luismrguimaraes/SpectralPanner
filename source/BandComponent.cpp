@@ -24,10 +24,16 @@ void BandComponent::resized()
 {
     auto b = getLocalBounds();
 
+    auto newBounds = b.reduced (0, b.getHeight() / 3);
+    newBounds = newBounds.withSizeKeepingCentre (juce::jmin (newBounds.getHeight(), b.getWidth()), newBounds.getHeight());
+
     if (isDraggable)
-        slider.setBounds (b.reduced (0, b.getHeight() / 2.25).withX (5 + b.getX()));
-    else
-        slider.setBounds (b.reduced (0, b.getHeight() / 2.25));
+    {
+        // get space for boundary line
+        auto newX = 5 + b.getX();
+        newBounds = newBounds.withX (newX).withWidth (newBounds.getWidth() - newX);
+    }
+    slider.setBounds (newBounds);
 }
 
 void BandComponent::mouseDown (const juce::MouseEvent& event)

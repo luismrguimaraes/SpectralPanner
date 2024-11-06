@@ -19,8 +19,11 @@ public:
 
     PluginProcessor* processorRef;
 
-    float freqMax = 30000;
+    float freqMax;
     float skewFactor = 1;
+
+    float mindB = -100.0f;
+    float maxdB = 0.0f;
 
 private:
     void drawNextFrameOfSpectrum();

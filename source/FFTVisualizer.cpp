@@ -25,9 +25,6 @@ void FFTVisualizer::timerCallback()
 
 void FFTVisualizer::drawNextFrameOfSpectrum()
 {
-    auto mindB = -100.0f;
-    auto maxdB = 0.0f;
-
     for (int i = 0; i < FFTProcessor::numBins; ++i)
     {
         // auto skewedProportionX = 1.0f - std::exp (std::log (1.0f - (float) i / (float) FFTProcessor::numBins) * skewFactor);
@@ -55,18 +52,31 @@ void FFTVisualizer::drawFrame (juce::Graphics& g)
     // index that has freqMax: sampleRate / fftSize * i = freqMax
     int indexMax = freqMax * FFTProcessor::fftSize / processorRef->getSampleRate();
     indexMax = skewIndex (indexMax, 1 / skewFactor);
+    if (indexMax == 0)
+        return; // avoid jmap assertion error
 
     auto width = getLocalBounds().getWidth();
     auto height = getLocalBounds().getHeight();
 
+    // set lines colour
+    g.setColour (juce::Colours::grey.darker());
+
     // every 1000k or so, draw a vertical line
     for (int freq = 1000; freq < freqMax; freq += 1000)
     {
-        g.setColour (juce::Colours::grey);
         g.drawLine ({ (float) juce::jmap (freq, 0, (int) freqMax, 0, width),
             (float) height,
             (float) juce::jmap (freq, 0, (int) freqMax, 0, width),
             0.0f });
+    }
+
+    // horizontal line every 6 db
+    for (float db = maxdB; db > mindB; db -= 6)
+    {
+        g.drawLine ({ 0.0f,
+            (float) juce::jmap (db, mindB, maxdB, 0.0f, (float) height),
+            (float) width,
+            (float) juce::jmap (db, mindB, maxdB, 0.0f, (float) height) });
     }
 
     for (int i = 1; i < FFTProcessor::numBins; ++i)
