@@ -26,6 +26,8 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     bandComp1->left = margin;
     bandComp1->minimumLeft = bandComp1->left;
     bandComponents.push_back (std::move (bandComp1));
+    auto newBandRemoveButton = std::make_unique<juce::TextButton> ("-");
+    bandRemoveButtons.push_back (std::move (newBandRemoveButton));
 
     addAndMakeVisible (newBandButton);
     newBandButton.onClick = [&] {
@@ -80,9 +82,30 @@ void PluginEditor::newBand()
     newBandComponent->left = newLeft;
     bandComponents.push_back (std::move (newBandComponent));
 
+    auto newBandRemoveButton = std::make_unique<juce::TextButton> ("-");
+    addAndMakeVisible (*newBandRemoveButton);
+    int newBandIndex = bandComponents.size() - 1;
+    newBandRemoveButton->onClick = [&] {
+        // removeBand();
+        std::cout << newBandIndex << std::endl;
+    };
+    bandRemoveButtons.push_back (std::move (newBandRemoveButton));
+
     resized();
 
-    std::cout << "size: " << bandComponents.size() << std::endl;
+    std::cout << "size after new band: " << bandComponents.size() << std::endl;
+}
+
+void PluginEditor::removeBand (int bandIndex)
+{
+    jassert (bandIndex < bandComponents.size());
+
+    bandComponents.erase (bandComponents.begin() + bandIndex);
+    bandRemoveButtons.erase (bandRemoveButtons.begin() + bandIndex);
+
+    resized();
+
+    std::cout << "size after removal: " << bandComponents.size() << std::endl;
 }
 
 void PluginEditor::paint (juce::Graphics& g)
@@ -118,6 +141,7 @@ void PluginEditor::resized()
         }
 
         // set bounds
+        jassert (bandComponents.size() == bandRemoveButtons.size());
         for (int i = bandComponents.size() - 1; i >= 0; --i)
         {
             if (i == 0)
@@ -136,6 +160,8 @@ void PluginEditor::resized()
             {
                 bandComponents[i]->setBounds (b.withRight (bandComponents[i + 1]->left).withLeft (bandComponents[i]->left));
             }
+
+            bandRemoveButtons[i]->setBounds (bandComponents[i]->getBounds().withWidth (40).withHeight (40));
         }
     }
 

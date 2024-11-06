@@ -30,8 +30,8 @@ void BandComponent::resized()
     if (isDraggable)
     {
         // get space for boundary line
-        auto newX = 5 + b.getX();
-        newBounds = newBounds.withX (newX).withWidth (newBounds.getWidth() - newX);
+        auto xIncrement = 5;
+        newBounds = newBounds.withX (newBounds.getX() + xIncrement).withWidth (newBounds.getWidth() - xIncrement);
     }
     slider.setBounds (newBounds);
 }

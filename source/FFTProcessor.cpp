@@ -138,11 +138,8 @@ void FFTProcessor::processSpectrum (float* data, int _numBins)
 
         // This is where you'd do your spectral processing...
 
-        if (sampleRate / fftSize * i > 10000)
-        {
-            // apply panning
-            magnitude *= 1.0 + *spectralSliderValue;
-        }
+        // apply global panning
+        magnitude *= 1.0 + *spectralSliderValue;
 
         // fill/update fftDisplayable
         fftDisplayable[i] = magnitude;

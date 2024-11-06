@@ -31,6 +31,7 @@ private:
 
     juce::TextButton newBandButton { "New band" };
     void newBand();
+    void removeBand (int);
 
     juce::Slider delayMsSlider;
     juce::Slider spectralSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxBelow };
@@ -41,6 +42,8 @@ private:
     //BandComponent bandComp2;
 
     std::vector<std::unique_ptr<BandComponent>> bandComponents;
+    std::vector<std::unique_ptr<juce::TextButton>> bandRemoveButtons;
+
     double getFreqFromLeft (int left);
 
     void mouseDoubleClick (const juce::MouseEvent& event) override;
