@@ -87,9 +87,8 @@ void PluginEditor::newBand()
     auto newBandRemoveButton = std::make_unique<juce::TextButton> ("-");
     addAndMakeVisible (*newBandRemoveButton);
     int newBandIndex = (int) bandComponents.size() - 1;
-    newBandRemoveButton->setButtonText (std::to_string (newBandIndex));
-    newBandRemoveButton->onClick = [&] {
-        removeBand (1);
+    newBandRemoveButton->onClick = [&, newBandIndex] {
+        removeBand (newBandIndex);
     };
     bandRemoveButtons.push_back (std::move (newBandRemoveButton));
 
@@ -105,10 +104,15 @@ void PluginEditor::removeBand (int bandID)
     bandComponents.erase (bandComponents.begin() + bandID);
     bandRemoveButtons.erase (bandRemoveButtons.begin() + bandID);
 
-    // update bandIDs
     for (int i = 0; i < (int) bandComponents.size(); ++i)
     {
+        // update bandIDs
         bandComponents[i]->bandID = i;
+
+        // update removeButtons onClick
+        bandRemoveButtons[i]->onClick = [&, i] {
+            removeBand (i);
+        };
     }
 
     resized();
@@ -169,7 +173,7 @@ void PluginEditor::resized()
                 bandComponents[i]->setBounds (b.withRight (bandComponents[i + 1]->left).withLeft (bandComponents[i]->left));
             }
 
-            bandRemoveButtons[i]->setBounds (bandComponents[i]->getBounds().withWidth (40).withHeight (40));
+            bandRemoveButtons[i]->setBounds (bandComponents[i]->getBounds().withWidth (40).withHeight (20));
         }
     }
 
