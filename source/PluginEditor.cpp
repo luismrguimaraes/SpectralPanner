@@ -25,6 +25,7 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     bandComp1->isDraggable = false;
     bandComp1->left = margin;
     bandComp1->minimumLeft = bandComp1->left;
+    bandComp1->bandID = (int) bandComponents.size();
     bandComponents.push_back (std::move (bandComp1));
     auto newBandRemoveButton = std::make_unique<juce::TextButton> ("-");
     bandRemoveButtons.push_back (std::move (newBandRemoveButton));
@@ -80,14 +81,15 @@ void PluginEditor::newBand()
     std::unique_ptr<BandComponent> newBandComponent = std::make_unique<BandComponent>();
     addAndMakeVisible (*newBandComponent);
     newBandComponent->left = newLeft;
+    newBandComponent->bandID = (int) bandComponents.size();
     bandComponents.push_back (std::move (newBandComponent));
 
     auto newBandRemoveButton = std::make_unique<juce::TextButton> ("-");
     addAndMakeVisible (*newBandRemoveButton);
-    int newBandIndex = bandComponents.size() - 1;
+    int newBandIndex = (int) bandComponents.size() - 1;
+    newBandRemoveButton->setButtonText (std::to_string (newBandIndex));
     newBandRemoveButton->onClick = [&] {
-        // removeBand();
-        std::cout << newBandIndex << std::endl;
+        removeBand (1);
     };
     bandRemoveButtons.push_back (std::move (newBandRemoveButton));
 
@@ -96,12 +98,18 @@ void PluginEditor::newBand()
     std::cout << "size after new band: " << bandComponents.size() << std::endl;
 }
 
-void PluginEditor::removeBand (int bandIndex)
+void PluginEditor::removeBand (int bandID)
 {
-    jassert (bandIndex < bandComponents.size());
+    jassert (bandID < (int) bandComponents.size());
 
-    bandComponents.erase (bandComponents.begin() + bandIndex);
-    bandRemoveButtons.erase (bandRemoveButtons.begin() + bandIndex);
+    bandComponents.erase (bandComponents.begin() + bandID);
+    bandRemoveButtons.erase (bandRemoveButtons.begin() + bandID);
+
+    // update bandIDs
+    for (int i = 0; i < (int) bandComponents.size(); ++i)
+    {
+        bandComponents[i]->bandID = i;
+    }
 
     resized();
 

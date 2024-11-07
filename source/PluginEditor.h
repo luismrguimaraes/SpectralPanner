@@ -22,6 +22,8 @@ public:
 
     void updateProcessorValues();
 
+    void removeBand (int bandID);
+
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
@@ -31,7 +33,6 @@ private:
 
     juce::TextButton newBandButton { "New band" };
     void newBand();
-    void removeBand (int);
 
     juce::Slider delayMsSlider;
     juce::Slider spectralSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxBelow };
@@ -52,3 +53,4 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };
+    
