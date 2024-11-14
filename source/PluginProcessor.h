@@ -6,7 +6,6 @@
 // import Signalsmith's DSP library, and ignore its warnings
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Weverything"
-#include "dsp/delay.h"
 #include "dsp/spectral.h"
 #pragma clang diagnostic pop
 
@@ -17,6 +16,26 @@
 class PluginProcessor : public juce::AudioProcessor
 {
 public:
+    enum Parameter {
+        bypass,
+        bands
+
+    };
+    static std::string getParamString (Parameter param)
+    {
+        switch (param)
+        {
+            case bypass:
+                return "bypass";
+            case bands:
+                return "bands";
+        }
+    }
+    float getBand (int index);
+    int updateBand (int index, int value);
+    void addBand (int value);
+    int removeBand (int index);
+
     PluginProcessor();
     ~PluginProcessor() override;
 
@@ -46,8 +65,6 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    std::unique_ptr<juce::AudioParameterInt> delayMs = std::make_unique<juce::AudioParameterInt> ("paramID", "Parameter Name", 0, 5000, 800);
-
     // signalsmith::spectral::STFT<float> stft{1, 512, 64};
     // std::atomic<bool> stftReady = false;
 
@@ -61,12 +78,5 @@ public:
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 
-    int previousDelayMs;
-    double decayGain = 0.5;
-
-    float wet = 0.5;
-
-    int delaySamples;
-    using Delay = signalsmith::delay::Delay<float, signalsmith::delay::InterpolatorNearest>;
-    Delay delay;
+    juce::var bandsArr;
 };

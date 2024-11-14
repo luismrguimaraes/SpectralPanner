@@ -5,6 +5,8 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 {
     juce::ignoreUnused (processorRef);
 
+    bypassButtonAtt = new juce::AudioProcessorValueTreeState::ButtonAttachment (processorRef.apvts, processorRef.getParamString (processorRef.Parameter::bypass), bypassButton);
+
     addAndMakeVisible (fftVis);
     fftVis.processorRef = &processorRef;
 
@@ -26,6 +28,7 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     bandComp1->left = margin;
     bandComp1->minimumLeft = bandComp1->left;
     bandComp1->bandID = (int) bandComponents.size();
+    processorRef.addBand (getFreqFromLeft (bandComp1->left));
     bandComponents.push_back (std::move (bandComp1));
     auto newBandRemoveButton = std::make_unique<juce::TextButton> ("-");
     bandRemoveButtons.push_back (std::move (newBandRemoveButton));
@@ -34,6 +37,8 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     newBandButton.onClick = [&] {
         newBand();
     };
+
+    addAndMakeVisible (bypassButton);
 
     addAndMakeVisible (spectralSlider);
     spectralSlider.setRange (-1, 1);
@@ -82,6 +87,7 @@ void PluginEditor::newBand()
     addAndMakeVisible (*newBandComponent);
     newBandComponent->left = newLeft;
     newBandComponent->bandID = (int) bandComponents.size();
+    processorRef.addBand (getFreqFromLeft (newBandComponent->left));
     bandComponents.push_back (std::move (newBandComponent));
 
     auto newBandRemoveButton = std::make_unique<juce::TextButton> ("-");
@@ -103,6 +109,7 @@ void PluginEditor::removeBand (int bandID)
 
     bandComponents.erase (bandComponents.begin() + bandID);
     bandRemoveButtons.erase (bandRemoveButtons.begin() + bandID);
+    processorRef.removeBand(bandID);
 
     for (int i = 0; i < (int) bandComponents.size(); ++i)
     {
@@ -159,14 +166,10 @@ void PluginEditor::resized()
             if (i == 0)
             { // left-most band
                 bandComponents[i]->setBounds (b.withRight (bandComponents[i + 1]->left));
-
-                std::cout << getFreqFromLeft (bandComponents[i]->left) << std::endl;
             }
             else if (i == bandComponents.size() - 1)
             { // right-most band
                 bandComponents[i]->setBounds (b.withLeft (bandComponents[i]->left));
-
-                std::cout << getFreqFromLeft (bandComponents[i]->left) << std::endl;
             }
             else
             {
@@ -182,8 +185,8 @@ void PluginEditor::resized()
     inspectButton.setBounds (getLocalBounds().withWidth (100).withHeight (50).withY (0));
 
     newBandButton.setBounds (getLocalBounds().withWidth (100).withHeight (50).withY (getLocalBounds().getBottom() - 50));
+    bypassButton.setBounds (getLocalBounds().withWidth (50).withHeight (50).withY (getLocalBounds().getBottom() - 50));
 
-    delayMsSlider.setBounds (b);
     spectralSlider.setBounds (b.withHeight (100));
 
     freqMaxSlider.setBounds (b.withWidth (b.getWidth() / 2).withX (b.getWidth() / 2 + 50).withHeight (50).withY (b.getHeight() + 25));
@@ -206,11 +209,9 @@ double inline PluginEditor::getFreqFromLeft (int left)
 
 void PluginEditor::updateProcessorValues()
 {
-    std::vector<float> bandsFreqs;
-
     for (int i = 0; i < bandComponents.size(); ++i)
     {
-        bandsFreqs.push_back (getFreqFromLeft (bandComponents[i]->left));
+        processorRef.updateBand (i, getFreqFromLeft (bandComponents[i]->left));
     }
 
     // int bandIndex = 0;
@@ -222,8 +223,8 @@ void PluginEditor::updateProcessorValues()
     //         processorRef.fft[1].newSpectralMultipliers[i] =
     // }
 
-    processorRef.fft[0].spectralMultipliersChanged.store (true);
-    processorRef.fft[1].spectralMultipliersChanged.store (true);
+    // processorRef.fft[0].spectralMultipliersChanged.store (true);
+    // processorRef.fft[1].spectralMultipliersChanged.store (true);
     // *processorRef.fft[0].spectralSliderValue = -spectralSlider.getValue();
     // *processorRef.fft[1].spectralSliderValue = spectralSlider.getValue();
 }

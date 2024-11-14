@@ -30,11 +30,11 @@ private:
     PluginProcessor& processorRef;
     std::unique_ptr<melatonin::Inspector> inspector;
     juce::TextButton inspectButton { "Inspect the UI" };
-
     juce::TextButton newBandButton { "New band" };
     void newBand();
+    juce::ToggleButton bypassButton;
+    juce::AudioProcessorValueTreeState::ButtonAttachment *bypassButtonAtt;
 
-    juce::Slider delayMsSlider;
     juce::Slider spectralSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxBelow };
     juce::Slider freqMaxSlider;
     juce::Slider skewFactorSlider;
@@ -53,4 +53,3 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };
-    

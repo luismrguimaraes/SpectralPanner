@@ -29,7 +29,7 @@ private:
     void drawNextFrameOfSpectrum();
     void drawFrame (juce::Graphics&);
 
-    float previousFreqMax = freqMax;
+    float previousFreqMax;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FFTVisualizer)
 };

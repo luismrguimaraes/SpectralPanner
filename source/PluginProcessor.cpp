@@ -10,9 +10,50 @@ PluginProcessor::PluginProcessor()
     #endif
                           .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
 #endif
-            ),
-      delay (1024)
+    )
 {
+    juce::var bands;
+    apvts.state.setProperty ("bands", bands, nullptr);
+
+    bandsArr = apvts.state.getProperty ("bands");
+}
+
+float PluginProcessor::getBand (int index)
+{
+    std::cout << " arr size " << bandsArr.size() << std::endl;
+    if (index > bandsArr.size() - 1)
+        return -1;
+    return bandsArr[index];
+}
+
+int PluginProcessor::updateBand (int index, int value)
+{
+    if (index > bandsArr.size() - 1)
+        return -1;
+    auto arr = bandsArr.getArray();
+    arr->set (index, value);
+
+    // update FFTProcessor spectralMultipliers?
+    // ...
+
+    std::cout << "size " << bandsArr.size() << std::endl;
+    std::cout << "index " << index << " value " << value << std::endl;
+
+    return 0;
+}
+
+void PluginProcessor::addBand (int value)
+{
+    bandsArr.append (value);
+}
+
+int PluginProcessor::removeBand (int index)
+{
+    if (index > bandsArr.size() - 1)
+        return -1;
+    bandsArr.remove (index);
+
+    return 0;
 }
 
 PluginProcessor::~PluginProcessor()
@@ -86,7 +127,7 @@ void PluginProcessor::changeProgramName (int index, const juce::String& newName)
 
 juce::AudioProcessorParameter* PluginProcessor::getBypassParameter() const
 {
-    return apvts.getParameter ("Bypass");
+    return apvts.getParameter (getParamString (Parameter::bypass));
 }
 
 //==============================================================================
@@ -95,12 +136,6 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     juce::ignoreUnused (sampleRate, samplesPerBlock);
-
-    previousDelayMs = *delayMs;
-
-    delaySamples = *delayMs * 0.001 * (int) sampleRate;
-    delay.resize (delaySamples + 1);
-    delay.reset();
 
     setLatencySamples (fft[0].getLatencyInSamples());
 
@@ -165,40 +200,6 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
 
-    // check param changes
-    if (previousDelayMs != *delayMs)
-    {
-        delaySamples = *delayMs * 0.001 * getSampleRate();
-        delay.resize (delaySamples + 1);
-        delay.reset();
-    }
-
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
-        juce::ignoreUnused (channelData);
-        // ..do something to the data...
-
-        // delay processing on the left channel
-        if (channel == 0)
-        {
-            // for (int i = 0; i < buffer.getNumSamples(); i++){
-            //     float delayed = delay.read(delaySamples);
-
-            //     float sum = channelData[i] + delayed*decayGain;
-            //     delay.write(sum);
-
-            //     channelData[i] = channelData[i] * (1 -wet) + delayed * wet;
-            // }
-
-            //analyse block
-            // if (!stftReady.load()){
-            //     stft.analyse(0, channelData);
-            //     stftReady.store(true);
-            // }
-        }
-    }
-
     auto numSamples = buffer.getNumSamples();
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
@@ -206,16 +207,13 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         buffer.clear (i, 0, numSamples);
     }
 
-    bool bypassed = apvts.getRawParameterValue ("Bypass")->load();
+    bool bypassed = apvts.getRawParameterValue (getParamString (Parameter::bypass))->load();
 
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
         auto* channelData = buffer.getWritePointer (channel);
         fft[channel].processBlock (channelData, numSamples, bypassed);
     }
-
-    // update "previousParams"
-    previousDelayMs = *delayMs;
 }
 
 //==============================================================================
@@ -235,16 +233,12 @@ void PluginProcessor::getStateInformation (juce::MemoryBlock& destData)
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
-
-    //juce::MemoryOutputStream (destData, true).writeInt (*delayMs);
 }
 
 void PluginProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
-
-    //*delayMs = juce::MemoryInputStream (data, static_cast<size_t> (sizeInBytes), false).readInt();
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParameterLayout()
@@ -252,9 +246,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
     layout.add (std::make_unique<juce::AudioParameterBool> (
-        juce::ParameterID ("Bypass", 1),
+        juce::ParameterID (getParamString (Parameter::bypass), 1),
         "Bypass",
         false));
+
+    // juce::ValueTree bands = juce::ValueTree ("Bands");
+    // layout.add (bands.begin(), bands.end());
 
     return layout;
 }
