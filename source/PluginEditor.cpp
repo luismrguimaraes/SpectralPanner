@@ -28,6 +28,7 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     bandComp1->left = margin;
     bandComp1->minimumLeft = bandComp1->left;
     bandComp1->bandID = (int) bandComponents.size();
+    std::cout << getFreqFromLeft (bandComp1->left) << std::endl;
     processorRef.addBand (getFreqFromLeft (bandComp1->left));
     bandComponents.push_back (std::move (bandComp1));
     auto newBandRemoveButton = std::make_unique<juce::TextButton> ("-");
@@ -109,7 +110,7 @@ void PluginEditor::removeBand (int bandID)
 
     bandComponents.erase (bandComponents.begin() + bandID);
     bandRemoveButtons.erase (bandRemoveButtons.begin() + bandID);
-    processorRef.removeBand(bandID);
+    processorRef.removeBand (bandID);
 
     for (int i = 0; i < (int) bandComponents.size(); ++i)
     {
@@ -184,7 +185,7 @@ void PluginEditor::resized()
 
     inspectButton.setBounds (getLocalBounds().withWidth (100).withHeight (50).withY (0));
 
-    newBandButton.setBounds (getLocalBounds().withWidth (100).withHeight (50).withY (getLocalBounds().getBottom() - 50));
+    newBandButton.setBounds (getLocalBounds().withWidth (200).withHeight (50).withY (getLocalBounds().getBottom() - 50));
     bypassButton.setBounds (getLocalBounds().withWidth (50).withHeight (50).withY (getLocalBounds().getBottom() - 50));
 
     spectralSlider.setBounds (b.withHeight (100));
@@ -202,9 +203,18 @@ double inline PluginEditor::getFreqFromLeft (int left)
 {
     auto b = getLocalBounds().reduced (margin);
 
-    auto value = juce::jmap ((double) left, (double) b.getX(), (double) b.getX() + b.getWidth(), 0.0, 1.0);
+    double value = 0;
+    if (juce::approximatelyEqual ((double) b.getX(), (double) b.getX() + b.getWidth()))
+    {
+        return value;
+    };
 
+    value = juce::jmap ((double) left, (double) b.getX(), (double) b.getX() + b.getWidth(), 0.0, 1.0);
     return value * fftVis.freqMax;
+}
+
+void PluginEditor::updateBandComponentsValues()
+{
 }
 
 void PluginEditor::updateProcessorValues()

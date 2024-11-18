@@ -20,8 +20,6 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
-    void updateProcessorValues();
-
     void removeBand (int bandID);
 
 private:
@@ -45,8 +43,10 @@ private:
     std::vector<std::unique_ptr<BandComponent>> bandComponents;
     std::vector<std::unique_ptr<juce::TextButton>> bandRemoveButtons;
 
+    void updateProcessorValues();
+    void updateBandComponentsValues();
     double getFreqFromLeft (int left);
-
+    
     void mouseDoubleClick (const juce::MouseEvent& event) override;
 
     int margin = 50;

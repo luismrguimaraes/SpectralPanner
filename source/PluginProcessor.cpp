@@ -12,10 +12,13 @@ PluginProcessor::PluginProcessor()
 #endif
     )
 {
-    juce::var bands;
-    apvts.state.setProperty ("bands", bands, nullptr);
+    juce::var bandsVar;
+    juce::ValueTree bandsVT ("bandsTree");
+    bandsVT.setProperty ("bands", bandsVar, nullptr);
+    apvts.state.addChild (bandsVT, -1, nullptr);
 
-    bandsArr = apvts.state.getProperty ("bands");
+    bandsTreeIndex = apvts.state.getNumChildren() - 1;
+    bandsArr = bandsVT.getProperty ("bands");
 }
 
 float PluginProcessor::getBand (int index)
@@ -224,7 +227,8 @@ bool PluginProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* PluginProcessor::createEditor()
 {
-    return new PluginEditor (*this);
+    editor = new PluginEditor (*this);
+    return editor;
 }
 
 //==============================================================================
@@ -233,12 +237,22 @@ void PluginProcessor::getStateInformation (juce::MemoryBlock& destData)
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
+
+    auto state = apvts.copyState();
+    std::unique_ptr<juce::XmlElement> xml (state.createXml());
+    copyXmlToBinary (*xml, destData);
 }
 
 void PluginProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
+
+    std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
+
+    if (xmlState.get() != nullptr)
+        if (xmlState->hasTagName (apvts.state.getType()))
+            apvts.replaceState (juce::ValueTree::fromXml (*xmlState));
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParameterLayout()

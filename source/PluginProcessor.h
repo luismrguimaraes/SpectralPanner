@@ -18,8 +18,6 @@ class PluginProcessor : public juce::AudioProcessor
 public:
     enum Parameter {
         bypass,
-        bands
-
     };
     static std::string getParamString (Parameter param)
     {
@@ -27,8 +25,6 @@ public:
         {
             case bypass:
                 return "bypass";
-            case bands:
-                return "bands";
         }
     }
     float getBand (int index);
@@ -69,14 +65,17 @@ public:
     // std::atomic<bool> stftReady = false;
 
     juce::AudioProcessorParameter* getBypassParameter() const override;
-    juce::AudioProcessorValueTreeState apvts { *this, nullptr, "Parameters", createParameterLayout() };
-    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
-
     // We need a separate FFTProcessor for each channel.
     FFTProcessor fft[2];
+
+    juce::AudioProcessorValueTreeState apvts { *this, nullptr, "Parameters", createParameterLayout() };
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 
+    int bandsTreeIndex;
     juce::var bandsArr;
+
+    juce::AudioProcessorEditor* editor;
 };
