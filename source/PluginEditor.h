@@ -29,16 +29,14 @@ private:
     std::unique_ptr<melatonin::Inspector> inspector;
     juce::TextButton inspectButton { "Inspect the UI" };
     juce::TextButton newBandButton { "New band" };
-    void newBand();
+    void newBand (bool initing = false);
     juce::ToggleButton bypassButton;
-    juce::AudioProcessorValueTreeState::ButtonAttachment *bypassButtonAtt;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassButtonAtt;
 
     juce::Slider spectralSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxBelow };
     juce::Slider freqMaxSlider;
     juce::Slider skewFactorSlider;
     FFTVisualizer fftVis;
-    std::unique_ptr<BandComponent> bandComp1;
-    //BandComponent bandComp2;
 
     std::vector<std::unique_ptr<BandComponent>> bandComponents;
     std::vector<std::unique_ptr<juce::TextButton>> bandRemoveButtons;
@@ -46,7 +44,8 @@ private:
     void updateProcessorValues();
     void updateBandComponentsValues();
     double getFreqFromLeft (int left);
-    
+    bool initing = true;
+
     void mouseDoubleClick (const juce::MouseEvent& event) override;
 
     int margin = 50;

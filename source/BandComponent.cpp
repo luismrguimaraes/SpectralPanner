@@ -38,15 +38,15 @@ void BandComponent::resized()
 
 void BandComponent::mouseDown (const juce::MouseEvent& event)
 {
-    std::cout << event.getMouseDownPosition().toString() << std::endl;
+    // std::cout << event.getMouseDownPosition().toString() << std::endl;
 
     if (isDraggable)
     {
-        std::cout << "draggin" << std::endl;
+        // std::cout << "draggin" << std::endl;
         dragging = true;
         dragStartX = getBounds().getX();
         dragStartWidth = getBounds().getWidth();
-        std::cout << dragStartX << std::endl;
+        // std::cout << dragStartX << std::endl;
     }
 }
 

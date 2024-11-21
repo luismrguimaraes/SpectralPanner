@@ -19,7 +19,7 @@ public:
 
     PluginProcessor* processorRef;
 
-    float freqMax;
+    float freqMax = 20000;
     float skewFactor = 1;
 
     float mindB = -100.0f;

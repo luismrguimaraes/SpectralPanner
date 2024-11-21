@@ -18,19 +18,27 @@ class PluginProcessor : public juce::AudioProcessor
 public:
     enum Parameter {
         bypass,
+        band,
+        bandsInUse
     };
-    static std::string getParamString (Parameter param)
+    static juce::String getParamString (Parameter param)
     {
         switch (param)
         {
             case bypass:
                 return "bypass";
+            case band:
+                return "band";
+            case bandsInUse:
+                return "bandsInUse";
         }
     }
     float getBand (int index);
-    int updateBand (int index, int value);
-    void addBand (int value);
+    int updateBand (int index, double value);
+    void addBand (double value);
     int removeBand (int index);
+    bool canAddBand();
+    int const bandNMax = 3;
 
     PluginProcessor();
     ~PluginProcessor() override;
@@ -64,18 +72,18 @@ public:
     // signalsmith::spectral::STFT<float> stft{1, 512, 64};
     // std::atomic<bool> stftReady = false;
 
-    juce::AudioProcessorParameter* getBypassParameter() const override;
+    int getBandsInUse();
     // We need a separate FFTProcessor for each channel.
     FFTProcessor fft[2];
 
+    juce::AudioProcessorParameter* getBypassParameter() const override;
     juce::AudioProcessorValueTreeState apvts { *this, nullptr, "Parameters", createParameterLayout() };
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 
-    int bandsTreeIndex;
-    juce::var bandsArr;
-
+    juce::AudioParameterFloat* getBandParameter (int bandIndex);
+    juce::AudioParameterInt* getBandsInUseParameter();
     juce::AudioProcessorEditor* editor;
 };

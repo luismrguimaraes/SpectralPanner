@@ -5,7 +5,7 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 {
     juce::ignoreUnused (processorRef);
 
-    bypassButtonAtt = new juce::AudioProcessorValueTreeState::ButtonAttachment (processorRef.apvts, processorRef.getParamString (processorRef.Parameter::bypass), bypassButton);
+    bypassButtonAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (processorRef.apvts, processorRef.getParamString (processorRef.Parameter::bypass), bypassButton);
 
     addAndMakeVisible (fftVis);
     fftVis.processorRef = &processorRef;
@@ -22,17 +22,16 @@ PluginEditor::PluginEditor (PluginProcessor& p)
         inspector->setVisible (true);
     };
 
-    bandComp1 = std::make_unique<BandComponent>();
-    addAndMakeVisible (*bandComp1);
-    bandComp1->isDraggable = false;
-    bandComp1->left = margin;
-    bandComp1->minimumLeft = bandComp1->left;
-    bandComp1->bandID = (int) bandComponents.size();
-    std::cout << getFreqFromLeft (bandComp1->left) << std::endl;
-    processorRef.addBand (getFreqFromLeft (bandComp1->left));
-    bandComponents.push_back (std::move (bandComp1));
-    auto newBandRemoveButton = std::make_unique<juce::TextButton> ("-");
-    bandRemoveButtons.push_back (std::move (newBandRemoveButton));
+    // auto bandComp1 = std::make_unique<BandComponent>();
+    // addAndMakeVisible (*bandComp1);
+    // bandComp1->isDraggable = false;
+    // bandComp1->left = margin;
+    // bandComp1->minimumLeft = bandComp1->left;
+    // bandComp1->bandID = (int) bandComponents.size();
+    // processorRef.addBand (getFreqFromLeft (bandComp1->left));
+    // bandComponents.push_back (std::move (bandComp1));
+    // auto newBandRemoveButton = std::make_unique<juce::TextButton> ("-");
+    // bandRemoveButtons.push_back (std::move (newBandRemoveButton));
 
     addAndMakeVisible (newBandButton);
     newBandButton.onClick = [&] {
@@ -75,33 +74,66 @@ PluginEditor::~PluginEditor()
     bandComponents.clear();
 }
 
-void PluginEditor::newBand()
+void PluginEditor::newBand (bool initing)
 {
-    auto newLeft = bandComponents[bandComponents.size() - 1]->left + 100;
-    if (newLeft + 50 > getLocalBounds().reduced (margin).getRight())
+    if (!initing && !processorRef.canAddBand())
     {
-        std::cout << getLocalBounds().reduced (margin).getRight() << std::endl;
+        std::cout << "Cannot add new band" << std::endl;
+        return;
+    }
+
+    auto isFirstBand = (int) bandComponents.size() == 0;
+    std::cout << "is First band " << isFirstBand << std::endl;
+    auto newLeft = margin;
+    if (!isFirstBand)
+        newLeft = bandComponents[bandComponents.size() - 1]->left + 100;
+    auto noSpaceForNewBand = newLeft + 50 > getLocalBounds().reduced (margin).getRight();
+    if (!initing && noSpaceForNewBand)
+    {
+        std::cout << "no space for new band"
+                  << " " << getLocalBounds().getWidth() << std::endl;
         return;
     }
 
     std::unique_ptr<BandComponent> newBandComponent = std::make_unique<BandComponent>();
     addAndMakeVisible (*newBandComponent);
-    newBandComponent->left = newLeft;
+    if (isFirstBand)
+    {
+        newBandComponent->isDraggable = false;
+        newBandComponent->minimumLeft = newLeft;
+    }
+    if (initing)
+    {
+        auto b = getLocalBounds().reduced (margin);
+        std::cout << "bandComponents size: " << (int) bandComponents.size() << std::endl;
+        newBandComponent->left = juce::jmap ((int) processorRef.getBand ((int) bandComponents.size()), 0, 20000, b.getX(), b.getX() + b.getWidth());
+        std::cout << "band " << (int) bandComponents.size() << " is " << newBandComponent->left << std::endl;
+    }
+    else
+        newBandComponent->left = newLeft;
     newBandComponent->bandID = (int) bandComponents.size();
-    processorRef.addBand (getFreqFromLeft (newBandComponent->left));
+
+    if (!initing)
+        processorRef.addBand (getFreqFromLeft (newBandComponent->left));
     bandComponents.push_back (std::move (newBandComponent));
 
     auto newBandRemoveButton = std::make_unique<juce::TextButton> ("-");
-    addAndMakeVisible (*newBandRemoveButton);
-    int newBandIndex = (int) bandComponents.size() - 1;
-    newBandRemoveButton->onClick = [&, newBandIndex] {
-        removeBand (newBandIndex);
-    };
+    if (!isFirstBand)
+    {
+        addAndMakeVisible (*newBandRemoveButton);
+        int newBandIndex = (int) bandComponents.size() - 1;
+        newBandRemoveButton->onClick = [&, newBandIndex] {
+            removeBand (newBandIndex);
+        };
+    }
     bandRemoveButtons.push_back (std::move (newBandRemoveButton));
 
-    resized();
+    if (!initing)
+        resized();
 
     std::cout << "size after new band: " << bandComponents.size() << std::endl;
+    // update newBandButton visibility
+    newBandButton.setVisible (processorRef.canAddBand());
 }
 
 void PluginEditor::removeBand (int bandID)
@@ -126,6 +158,8 @@ void PluginEditor::removeBand (int bandID)
     resized();
 
     std::cout << "size after removal: " << bandComponents.size() << std::endl;
+    // update newBandButton visibility
+    newBandButton.setVisible (processorRef.canAddBand());
 }
 
 void PluginEditor::paint (juce::Graphics& g)
@@ -142,6 +176,16 @@ void PluginEditor::paint (juce::Graphics& g)
 
 void PluginEditor::resized()
 {
+    if (initing)
+    {
+        for (int i = 0; i < processorRef.getBandsInUse(); ++i)
+        {
+            std::cout << i << std::endl;
+            newBand (true);
+        }
+        initing = false;
+    }
+
     auto b = getLocalBounds().reduced (margin);
 
     // layout the positions of your child components here
@@ -154,6 +198,7 @@ void PluginEditor::resized()
         // update minimumLeft
         for (int i = 0; i < bandComponents.size() - 1; ++i)
         {
+            std::cout << "resizing " << i << std::endl;
             auto newMinLeft = 0;
             newMinLeft = bandComponents[i]->left + 50;
 
@@ -206,6 +251,7 @@ double inline PluginEditor::getFreqFromLeft (int left)
     double value = 0;
     if (juce::approximatelyEqual ((double) b.getX(), (double) b.getX() + b.getWidth()))
     {
+        std::cout << "getFreqFromLeft error" << std::endl;
         return value;
     };
 
@@ -221,6 +267,7 @@ void PluginEditor::updateProcessorValues()
 {
     for (int i = 0; i < bandComponents.size(); ++i)
     {
+        std::cout << "updating band " << i << " with value " << getFreqFromLeft (bandComponents[i]->left) << std::endl;
         processorRef.updateBand (i, getFreqFromLeft (bandComponents[i]->left));
     }
 

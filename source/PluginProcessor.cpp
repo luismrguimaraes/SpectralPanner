@@ -12,51 +12,94 @@ PluginProcessor::PluginProcessor()
 #endif
     )
 {
-    juce::var bandsVar;
-    juce::ValueTree bandsVT ("bandsTree");
-    bandsVT.setProperty ("bands", bandsVar, nullptr);
-    apvts.state.addChild (bandsVT, -1, nullptr);
-
-    bandsTreeIndex = apvts.state.getNumChildren() - 1;
-    bandsArr = bandsVT.getProperty ("bands");
 }
 
 float PluginProcessor::getBand (int index)
 {
-    std::cout << " arr size " << bandsArr.size() << std::endl;
-    if (index > bandsArr.size() - 1)
-        return -1;
-    return bandsArr[index];
+    // std::cout << " arr size " << bandsArr.size() << std::endl;
+    // if (index > bandsArr.size() - 1)
+    //     return -1;
+    // return bandsArr[index];
+
+    auto bandParam = getBandParameter (index);
+    return *bandParam;
 }
 
-int PluginProcessor::updateBand (int index, int value)
+int PluginProcessor::updateBand (int index, double value)
 {
-    if (index > bandsArr.size() - 1)
-        return -1;
-    auto arr = bandsArr.getArray();
-    arr->set (index, value);
+    // if (index > bandsArr.size() - 1)
+    //     return -1;
+    // auto arr = bandsArr.getArray();
+    // arr->set (index, value);
 
-    // update FFTProcessor spectralMultipliers?
-    // ...
+    // // update FFTProcessor spectralMultipliers?
+    // // ...
 
-    std::cout << "size " << bandsArr.size() << std::endl;
-    std::cout << "index " << index << " value " << value << std::endl;
+    // std::cout << "size " << bandsArr.size() << std::endl;
+    // std::cout << "index " << index << " value " << value << std::endl;
+
+    auto bandParam = getBandParameter (index);
+    *bandParam = value;
+    std::cout << "value received: " << value << std::endl;
+    std::cout << "new value: " << bandParam->getCurrentValueAsText() << std::endl;
+    std::cout << "bands in use: " << getBandsInUse() << std::endl;
 
     return 0;
 }
 
-void PluginProcessor::addBand (int value)
+void PluginProcessor::addBand (double value)
 {
-    bandsArr.append (value);
+    // bandsArr.append (value);
+
+    jassert (canAddBand());
+
+    auto bandParam = getBandParameter (getBandsInUse());
+    *bandParam = value;
+
+    auto bandsInUseParam = getBandsInUseParameter();
+    *bandsInUseParam = *bandsInUseParam + 1;
+    std::cout << "param value just set: " << *bandsInUseParam << std::endl;
+    std::cout << "actual: " << getBandsInUse() << std::endl;
+}
+
+bool PluginProcessor::canAddBand()
+{
+    return getBandsInUse() < bandNMax;
 }
 
 int PluginProcessor::removeBand (int index)
 {
-    if (index > bandsArr.size() - 1)
-        return -1;
-    bandsArr.remove (index);
+    // if (index > bandsArr.size() - 1)
+    //     return -1;
+    // bandsArr.remove (index);
 
+    auto bandsInUseParam = getBandsInUseParameter();
+    *bandsInUseParam = *bandsInUseParam - 1;
     return 0;
+}
+
+juce::AudioParameterFloat* PluginProcessor::getBandParameter (int bandIndex)
+{
+    auto param = (juce::AudioParameterFloat*) apvts.getParameter (getParamString (Parameter::band) + juce::String (bandIndex));
+
+    std::cout << param->getParameterID() << std::endl;
+    return param;
+}
+
+juce::AudioParameterInt* PluginProcessor::getBandsInUseParameter()
+{
+    return (juce::AudioParameterInt*) apvts.getParameter (getParamString (Parameter::bandsInUse));
+}
+int PluginProcessor::getBandsInUse()
+{
+    auto bandsInUseParam = getBandsInUseParameter();
+
+    return *bandsInUseParam;
+}
+
+juce::AudioProcessorParameter* PluginProcessor::getBypassParameter() const
+{
+    return apvts.getParameter (getParamString (Parameter::bypass));
 }
 
 PluginProcessor::~PluginProcessor()
@@ -126,11 +169,6 @@ const juce::String PluginProcessor::getProgramName (int index)
 void PluginProcessor::changeProgramName (int index, const juce::String& newName)
 {
     juce::ignoreUnused (index, newName);
-}
-
-juce::AudioProcessorParameter* PluginProcessor::getBypassParameter() const
-{
-    return apvts.getParameter (getParamString (Parameter::bypass));
 }
 
 //==============================================================================
@@ -263,6 +301,41 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
         juce::ParameterID (getParamString (Parameter::bypass), 1),
         "Bypass",
         false));
+
+    layout.add (std::make_unique<juce::AudioParameterInt> (
+        juce::ParameterID (getParamString (Parameter::bandsInUse), 1),
+        "Bands in use",
+        1,
+        20,
+        1));
+
+    layout.add (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID (getParamString (Parameter::band) + "0", 1),
+        "Band 1 frequency",
+        0.f,
+        20000.f,
+        0.f));
+
+    layout.add (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID (getParamString (Parameter::band) + "1", 1),
+        "Band 2 frequency",
+        0.f,
+        20000.f,
+        0.f));
+
+    layout.add (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID (getParamString (Parameter::band) + "2", 1),
+        "Band 3 frequency",
+        0.f,
+        20000.f,
+        0.f));
+
+    layout.add (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID (getParamString (Parameter::band) + "3", 1),
+        "Band 4 frequency",
+        0.f,
+        20000.f,
+        0.f));
 
     // juce::ValueTree bands = juce::ValueTree ("Bands");
     // layout.add (bands.begin(), bands.end());
