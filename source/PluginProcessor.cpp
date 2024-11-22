@@ -302,37 +302,43 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
         "Bypass",
         false));
 
-    layout.add (std::make_unique<juce::AudioParameterInt> (
+    auto paramInt = std::make_unique<juce::AudioParameterInt> (
         juce::ParameterID (getParamString (Parameter::bandsInUse), 1),
         "Bands in use",
         1,
         20,
-        1));
+        1);
+    paramInt->addListener (&paramListener);
+    layout.add (std::move (paramInt));
 
-    layout.add (std::make_unique<juce::AudioParameterFloat> (
+    auto paramFloat = std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID (getParamString (Parameter::band) + "0", 1),
-        "Band 1 frequency",
+        "Band 1 start frequency",
         0.f,
         20000.f,
-        0.f));
+        0.f);
+    paramFloat->addListener (&paramListener);
+    layout.add (std::move (paramFloat));
 
-    layout.add (std::make_unique<juce::AudioParameterFloat> (
+    paramFloat = std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID (getParamString (Parameter::band) + "1", 1),
-        "Band 2 frequency",
+        "Band 2 start frequency",
         0.f,
         20000.f,
-        0.f));
+        0.f);
+    paramFloat->addListener (&paramListener);
+    layout.add (std::move (paramFloat));
 
     layout.add (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID (getParamString (Parameter::band) + "2", 1),
-        "Band 3 frequency",
+        "Band 3 start frequency",
         0.f,
         20000.f,
         0.f));
 
     layout.add (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID (getParamString (Parameter::band) + "3", 1),
-        "Band 4 frequency",
+        "Band 4 start frequency",
         0.f,
         20000.f,
         0.f));
