@@ -85,9 +85,9 @@ void PluginEditor::newBand (bool _initing)
     }
 
     auto isFirstBand = (int) bandComponents.size() == 0;
-    auto newLeft = margin;
+    float newLeft = margin;
     if (!isFirstBand)
-        newLeft = bandComponents[bandComponents.size() - 1]->left + 100;
+        newLeft = bandComponents[bandComponents.size() - 1]->left + 100.f;
     auto noSpaceForNewBand = newLeft + 50 > getLocalBounds().reduced (margin).getRight();
     if (!_initing && noSpaceForNewBand)
     {
@@ -106,7 +106,7 @@ void PluginEditor::newBand (bool _initing)
     if (_initing)
     {
         auto b = getLocalBounds().reduced (margin);
-        newBandComponent->left = juce::jmap ((int) processorRef.getBand ((int) bandComponents.size()), 0, 20000, b.getX(), b.getX() + b.getWidth());
+        newBandComponent->left = juce::jmap (processorRef.getBand ((int) bandComponents.size()), 0.f, 20000.f, (float) b.getX(), (float) b.getX() + b.getWidth());
     }
     else
         newBandComponent->left = newLeft;
@@ -243,18 +243,18 @@ void PluginEditor::mouseDoubleClick (const juce::MouseEvent& event)
     newBand();
 }
 
-double inline PluginEditor::getFreqFromLeft (int left)
+double inline PluginEditor::getFreqFromLeft (float left)
 {
     auto b = getLocalBounds().reduced (margin);
 
     double value = 0;
-    if (juce::approximatelyEqual ((double) b.getX(), (double) b.getX() + b.getWidth()))
+    if (juce::approximatelyEqual (b.getX(), b.getX() + b.getWidth()))
     {
         std::cout << "getFreqFromLeft error" << std::endl;
         return value;
     };
 
-    value = juce::jmap ((double) left, (double) b.getX(), (double) b.getX() + b.getWidth(), 0.0, 1.0);
+    value = juce::jmap ((float) left, (float) b.getX(), (float) b.getX() + b.getWidth(), 0.f, 1.f);
     return value * fftVis->freqMax;
 }
 
@@ -301,7 +301,7 @@ void PluginEditor::handleAsyncUpdate()
     }
     for (int i = 1; i < processorRef.getBandsInUse(); ++i)
     {
-        auto value = juce::jmap ((int) processorRef.getBand (i), 0, 20000, b.getX(), b.getX() + b.getWidth());
+        auto value = juce::jmap (processorRef.getBand (i), 0.f, 20000.f, (float) b.getX(), (float) b.getX() + b.getWidth());
         //     auto min = juce::jmap ((int) processorRef.getBand (i - 1) + 50, 0, 20000, b.getX(), b.getX() + b.getWidth());
         //     auto max = -1;
         //     if (i < processorRef.getBandsInUse() - 1)
@@ -313,6 +313,8 @@ void PluginEditor::handleAsyncUpdate()
         //         value = max;
 
         bandComponents[i]->left = value;
+
+        std::cout << "value: " << value << std::endl;
     }
 
     // // render

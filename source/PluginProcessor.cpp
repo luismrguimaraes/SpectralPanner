@@ -19,10 +19,11 @@ void PluginProcessor::parameterValueChanged (int parameterIndex, float newValue)
     // Handle the parameter value change
     juce::Logger::writeToLog ("Parameter " + juce::String (parameterIndex) + " changed to " + juce::String (newValue));
 
-    if (editor)
+    if (editor != nullptr)
     {
         PluginEditor* ed = (PluginEditor*) editor;
-        ed->updateEditorValues();
+        if (ed != nullptr)
+            ed->updateEditorValues();
     }
 }
 
@@ -324,7 +325,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
         juce::ParameterID (getParamString (Parameter::bandsInUse), 1),
         "Bands in use",
         1,
-        20,
+        4,
         1);
     paramInt->addListener (this);
     layout.add (std::move (paramInt));

@@ -16,8 +16,8 @@ public:
     juce::ComponentDragger dragger;
     juce::ComponentBoundsConstrainer dragConstrainer;
 
-    int left;
-    int minimumLeft;
+    float left;
+    float minimumLeft;
     bool isDraggable = true;
 
     int bandID;

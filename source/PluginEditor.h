@@ -49,7 +49,7 @@ private:
     std::vector<std::unique_ptr<BandComponent>> bandComponents;
     std::vector<std::unique_ptr<juce::TextButton>> bandRemoveButtons;
 
-    double getFreqFromLeft (int left);
+    double getFreqFromLeft (float left);
     bool initing = true;
 
     void mouseDoubleClick (const juce::MouseEvent& event) override;
