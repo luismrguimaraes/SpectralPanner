@@ -3,8 +3,10 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 //#include <juce_gui_basics/components/juce_Component.h>
 #include "FFTProcessor.h"
-#include "PluginProcessor.h"
+#include "PluginEditor.h"
 #include "utils.h"
+
+class PluginProcessor;
 
 class FFTVisualizer : public juce::Component, juce::Timer
 {

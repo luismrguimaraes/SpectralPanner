@@ -2,6 +2,9 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include "PluginEditor.h"
+class PluginEditor;
+
 class BandComponent : public juce::Component
 {
 public:
@@ -30,4 +33,6 @@ private:
     bool dragging = false;
     int dragStartX;
     int dragStartWidth;
+
+    PluginEditor* editor;
 };

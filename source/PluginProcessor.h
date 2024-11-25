@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FFTProcessor.h"
+#include "PluginEditor.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 
 // import Signalsmith's DSP library, and ignore its warnings
@@ -13,7 +14,9 @@
     #include "ipps.h"
 #endif
 
-class PluginProcessor : public juce::AudioProcessor
+class PluginEditor;
+
+class PluginProcessor : public juce::AudioProcessor, juce::AudioProcessorParameter::Listener
 {
 public:
     enum Parameter {
@@ -38,7 +41,7 @@ public:
     void addBand (double value);
     int removeBand (int index);
     bool canAddBand();
-    int const bandNMax = 3;
+    int const bandNMax = 4;
 
     PluginProcessor();
     ~PluginProcessor() override;
@@ -86,4 +89,7 @@ private:
     juce::AudioParameterFloat* getBandParameter (int bandIndex);
     juce::AudioParameterInt* getBandsInUseParameter();
     juce::AudioProcessorEditor* editor;
+
+    void parameterValueChanged (int, float) override;
+    void parameterGestureChanged (int, bool) override;
 };

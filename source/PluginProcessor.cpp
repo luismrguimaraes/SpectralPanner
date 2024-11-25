@@ -14,6 +14,24 @@ PluginProcessor::PluginProcessor()
 {
 }
 
+void PluginProcessor::parameterValueChanged (int parameterIndex, float newValue)
+{
+    // Handle the parameter value change
+    juce::Logger::writeToLog ("Parameter " + juce::String (parameterIndex) + " changed to " + juce::String (newValue));
+
+    if (editor)
+    {
+        PluginEditor* ed = (PluginEditor*) editor;
+        ed->updateEditorValues();
+    }
+}
+
+void PluginProcessor::parameterGestureChanged (int parameterIndex, bool gestureIsStarting)
+{
+    // Handle the parameter gesture change
+    juce::Logger::writeToLog ("Parameter " + juce::String (parameterIndex) + (gestureIsStarting ? " started" : " stopped") + " being adjusted.");
+}
+
 float PluginProcessor::getBand (int index)
 {
     // std::cout << " arr size " << bandsArr.size() << std::endl;
@@ -40,9 +58,9 @@ int PluginProcessor::updateBand (int index, double value)
 
     auto bandParam = getBandParameter (index);
     *bandParam = value;
-    std::cout << "value received: " << value << std::endl;
-    std::cout << "new value: " << bandParam->getCurrentValueAsText() << std::endl;
-    std::cout << "bands in use: " << getBandsInUse() << std::endl;
+    // std::cout << "value received: " << value << std::endl;
+    // std::cout << "new value: " << bandParam->getCurrentValueAsText() << std::endl;
+    // std::cout << "bands in use: " << getBandsInUse() << std::endl;
 
     return 0;
 }
@@ -58,8 +76,8 @@ void PluginProcessor::addBand (double value)
 
     auto bandsInUseParam = getBandsInUseParameter();
     *bandsInUseParam = *bandsInUseParam + 1;
-    std::cout << "param value just set: " << *bandsInUseParam << std::endl;
-    std::cout << "actual: " << getBandsInUse() << std::endl;
+    // std::cout << "param value just set: " << *bandsInUseParam << std::endl;
+    // std::cout << "actual: " << getBandsInUse() << std::endl;
 }
 
 bool PluginProcessor::canAddBand()
@@ -82,7 +100,7 @@ juce::AudioParameterFloat* PluginProcessor::getBandParameter (int bandIndex)
 {
     auto param = (juce::AudioParameterFloat*) apvts.getParameter (getParamString (Parameter::band) + juce::String (bandIndex));
 
-    std::cout << param->getParameterID() << std::endl;
+    // std::cout << param->getParameterID() << std::endl;
     return param;
 }
 
@@ -302,40 +320,50 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
         "Bypass",
         false));
 
-    layout.add (std::make_unique<juce::AudioParameterInt> (
+    auto paramInt = std::make_unique<juce::AudioParameterInt> (
         juce::ParameterID (getParamString (Parameter::bandsInUse), 1),
         "Bands in use",
         1,
         20,
-        1));
+        1);
+    paramInt->addListener (this);
+    layout.add (std::move (paramInt));
 
-    layout.add (std::make_unique<juce::AudioParameterFloat> (
+    auto paramFloat = std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID (getParamString (Parameter::band) + "0", 1),
-        "Band 1 frequency",
+        "Band 1 start frequency",
         0.f,
         20000.f,
-        0.f));
+        0.f);
+    paramFloat->addListener (this);
+    layout.add (std::move (paramFloat));
 
-    layout.add (std::make_unique<juce::AudioParameterFloat> (
+    paramFloat = std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID (getParamString (Parameter::band) + "1", 1),
-        "Band 2 frequency",
+        "Band 2 start frequency",
         0.f,
         20000.f,
-        0.f));
+        0.f);
+    paramFloat->addListener (this);
+    layout.add (std::move (paramFloat));
 
-    layout.add (std::make_unique<juce::AudioParameterFloat> (
+    paramFloat = std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID (getParamString (Parameter::band) + "2", 1),
-        "Band 3 frequency",
+        "Band 3 start frequency",
         0.f,
         20000.f,
-        0.f));
+        0.f);
+    paramFloat->addListener (this);
+    layout.add (std::move (paramFloat));
 
-    layout.add (std::make_unique<juce::AudioParameterFloat> (
+    paramFloat = std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID (getParamString (Parameter::band) + "3", 1),
-        "Band 4 frequency",
+        "Band 4 start frequency",
         0.f,
         20000.f,
-        0.f));
+        0.f);
+    paramFloat->addListener (this);
+    layout.add (std::move (paramFloat));
 
     // juce::ValueTree bands = juce::ValueTree ("Bands");
     // layout.add (bands.begin(), bands.end());

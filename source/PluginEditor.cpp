@@ -7,8 +7,9 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 
     bypassButtonAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (processorRef.apvts, processorRef.getParamString (processorRef.Parameter::bypass), bypassButton);
 
-    addAndMakeVisible (fftVis);
-    fftVis.processorRef = &processorRef;
+    fftVis = std::make_unique<FFTVisualizer>();
+    addAndMakeVisible (*fftVis);
+    fftVis->processorRef = &processorRef;
 
     addAndMakeVisible (inspectButton);
     // this chunk of code instantiates and opens the melatonin inspector
@@ -48,18 +49,18 @@ PluginEditor::PluginEditor (PluginProcessor& p)
         *processorRef.fft[1].spectralSliderValue = spectralSlider.getValue();
     };
 
-    addAndMakeVisible (freqMaxSlider);
+    // addAndMakeVisible (freqMaxSlider);
     freqMaxSlider.setRange (1000, 20000);
     freqMaxSlider.onValueChange = [this] {
-        fftVis.freqMax = freqMaxSlider.getValue();
+        fftVis->freqMax = freqMaxSlider.getValue();
     };
     freqMaxSlider.setValue (20000);
 
-    addAndMakeVisible (skewFactorSlider);
+    // addAndMakeVisible (skewFactorSlider);
     skewFactorSlider.setRange (0.1, 1);
     skewFactorSlider.setValue (1);
     skewFactorSlider.onValueChange = [this] {
-        fftVis.skewFactor = skewFactorSlider.getValue();
+        fftVis->skewFactor = skewFactorSlider.getValue();
     };
 
     // Make sure that before the constructor has finished, you've set the
@@ -72,23 +73,23 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 PluginEditor::~PluginEditor()
 {
     bandComponents.clear();
+    bandRemoveButtons.clear();
 }
 
-void PluginEditor::newBand (bool initing)
+void PluginEditor::newBand (bool _initing)
 {
-    if (!initing && !processorRef.canAddBand())
+    if (!_initing && !processorRef.canAddBand())
     {
         std::cout << "Cannot add new band" << std::endl;
         return;
     }
 
     auto isFirstBand = (int) bandComponents.size() == 0;
-    std::cout << "is First band " << isFirstBand << std::endl;
     auto newLeft = margin;
     if (!isFirstBand)
         newLeft = bandComponents[bandComponents.size() - 1]->left + 100;
     auto noSpaceForNewBand = newLeft + 50 > getLocalBounds().reduced (margin).getRight();
-    if (!initing && noSpaceForNewBand)
+    if (!_initing && noSpaceForNewBand)
     {
         std::cout << "no space for new band"
                   << " " << getLocalBounds().getWidth() << std::endl;
@@ -102,18 +103,16 @@ void PluginEditor::newBand (bool initing)
         newBandComponent->isDraggable = false;
         newBandComponent->minimumLeft = newLeft;
     }
-    if (initing)
+    if (_initing)
     {
         auto b = getLocalBounds().reduced (margin);
-        std::cout << "bandComponents size: " << (int) bandComponents.size() << std::endl;
         newBandComponent->left = juce::jmap ((int) processorRef.getBand ((int) bandComponents.size()), 0, 20000, b.getX(), b.getX() + b.getWidth());
-        std::cout << "band " << (int) bandComponents.size() << " is " << newBandComponent->left << std::endl;
     }
     else
         newBandComponent->left = newLeft;
     newBandComponent->bandID = (int) bandComponents.size();
 
-    if (!initing)
+    if (!_initing)
         processorRef.addBand (getFreqFromLeft (newBandComponent->left));
     bandComponents.push_back (std::move (newBandComponent));
 
@@ -128,8 +127,11 @@ void PluginEditor::newBand (bool initing)
     }
     bandRemoveButtons.push_back (std::move (newBandRemoveButton));
 
-    if (!initing)
-        resized();
+    if (!_initing)
+    {
+        // resized();
+        updateProcessorValues();
+    }
 
     std::cout << "size after new band: " << bandComponents.size() << std::endl;
     // update newBandButton visibility
@@ -155,7 +157,8 @@ void PluginEditor::removeBand (int bandID)
         };
     }
 
-    resized();
+    // resized();
+    updateProcessorValues();
 
     std::cout << "size after removal: " << bandComponents.size() << std::endl;
     // update newBandButton visibility
@@ -180,7 +183,6 @@ void PluginEditor::resized()
     {
         for (int i = 0; i < processorRef.getBandsInUse(); ++i)
         {
-            std::cout << i << std::endl;
             newBand (true);
         }
         initing = false;
@@ -189,7 +191,7 @@ void PluginEditor::resized()
     auto b = getLocalBounds().reduced (margin);
 
     // layout the positions of your child components here
-    fftVis.setBounds (b);
+    fftVis->setBounds (b);
 
     if (bandComponents.size() == 1)
         bandComponents[0]->setBounds (b);
@@ -198,7 +200,6 @@ void PluginEditor::resized()
         // update minimumLeft
         for (int i = 0; i < bandComponents.size() - 1; ++i)
         {
-            std::cout << "resizing " << i << std::endl;
             auto newMinLeft = 0;
             newMinLeft = bandComponents[i]->left + 50;
 
@@ -225,8 +226,6 @@ void PluginEditor::resized()
             bandRemoveButtons[i]->setBounds (bandComponents[i]->getBounds().withWidth (40).withHeight (20));
         }
     }
-
-    updateProcessorValues();
 
     inspectButton.setBounds (getLocalBounds().withWidth (100).withHeight (50).withY (0));
 
@@ -256,11 +255,7 @@ double inline PluginEditor::getFreqFromLeft (int left)
     };
 
     value = juce::jmap ((double) left, (double) b.getX(), (double) b.getX() + b.getWidth(), 0.0, 1.0);
-    return value * fftVis.freqMax;
-}
-
-void PluginEditor::updateBandComponentsValues()
-{
+    return value * fftVis->freqMax;
 }
 
 void PluginEditor::updateProcessorValues()
@@ -284,4 +279,42 @@ void PluginEditor::updateProcessorValues()
     // processorRef.fft[1].spectralMultipliersChanged.store (true);
     // *processorRef.fft[0].spectralSliderValue = -spectralSlider.getValue();
     // *processorRef.fft[1].spectralSliderValue = spectralSlider.getValue();
+}
+
+// Call when processor values (without attachments) changed (bands frequency and bands in use)
+void PluginEditor::updateEditorValues()
+{
+    if (!initing)
+        triggerAsyncUpdate();
+}
+void PluginEditor::handleAsyncUpdate()
+{
+    auto b = getLocalBounds().reduced (margin);
+    // // update editor values
+    while ((int) bandComponents.size() > processorRef.getBandsInUse())
+    {
+        removeBand (bandComponents[(int) bandComponents.size() - 1]->bandID);
+    }
+    while ((int) bandComponents.size() < processorRef.getBandsInUse())
+    {
+        newBand (true);
+    }
+    for (int i = 1; i < processorRef.getBandsInUse(); ++i)
+    {
+        auto value = juce::jmap ((int) processorRef.getBand (i), 0, 20000, b.getX(), b.getX() + b.getWidth());
+        //     auto min = juce::jmap ((int) processorRef.getBand (i - 1) + 50, 0, 20000, b.getX(), b.getX() + b.getWidth());
+        //     auto max = -1;
+        //     if (i < processorRef.getBandsInUse() - 1)
+        //         max = juce::jmap ((int) processorRef.getBand (i + 1) - 50, 0, 20000, b.getX(), b.getX() + b.getWidth());
+
+        //     if (value < min)
+        //         value = min;
+        //     if (value > max)
+        //         value = max;
+
+        bandComponents[i]->left = value;
+    }
+
+    // // render
+    resized();
 }

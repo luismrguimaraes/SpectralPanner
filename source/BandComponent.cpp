@@ -75,7 +75,9 @@ void BandComponent::mouseDrag (const juce::MouseEvent& event)
             left = dragStartX + dragStartWidth - 50;
         }
 
-        getParentComponent()->resized();
+        // getParentComponent()->resized();
+        editor = (PluginEditor*) getParentComponent();
+        editor->updateProcessorValues();
     }
 }
 

@@ -1,16 +1,19 @@
 #pragma once
 
 #include "BinaryData.h"
-#include "PluginProcessor.h"
 #include "melatonin_inspector/melatonin_inspector.h"
 
 #include "BandComponent.h"
 #include "FFTProcessor.h"
 #include "FFTVisualizer.h"
+#include "PluginProcessor.h"
 #include "utils.h"
 
-//==============================================================================
-class PluginEditor : public juce::AudioProcessorEditor
+class BandComponent;
+class PluginProcessor;
+class FFTVisualizer;
+
+class PluginEditor : public juce::AudioProcessorEditor, juce::AsyncUpdater
 {
 public:
     explicit PluginEditor (PluginProcessor&);
@@ -20,7 +23,12 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
+    void handleAsyncUpdate() override;
+    void updateProcessorValues();
+
     void removeBand (int bandID);
+
+    void updateEditorValues();
 
 private:
     // This reference is provided as a quick way for your editor to
@@ -29,20 +37,18 @@ private:
     std::unique_ptr<melatonin::Inspector> inspector;
     juce::TextButton inspectButton { "Inspect the UI" };
     juce::TextButton newBandButton { "New band" };
-    void newBand (bool initing = false);
+    void newBand (bool _initing = false);
     juce::ToggleButton bypassButton;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassButtonAtt;
 
     juce::Slider spectralSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxBelow };
     juce::Slider freqMaxSlider;
     juce::Slider skewFactorSlider;
-    FFTVisualizer fftVis;
+    std::unique_ptr<FFTVisualizer> fftVis;
 
     std::vector<std::unique_ptr<BandComponent>> bandComponents;
     std::vector<std::unique_ptr<juce::TextButton>> bandRemoveButtons;
 
-    void updateProcessorValues();
-    void updateBandComponentsValues();
     double getFreqFromLeft (int left);
     bool initing = true;
 
