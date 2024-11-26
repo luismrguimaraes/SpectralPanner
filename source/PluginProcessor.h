@@ -1,22 +1,48 @@
 #pragma once
 
-#include <juce_audio_processors/juce_audio_processors.h>
 #include "FFTProcessor.h"
+#include "PluginEditor.h"
+#include <juce_audio_processors/juce_audio_processors.h>
 
 // import Signalsmith's DSP library, and ignore its warnings
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Weverything"
 #include "dsp/spectral.h"
-#include "dsp/delay.h"
 #pragma clang diagnostic pop
 
 #if (MSVC)
-#include "ipps.h"
+    #include "ipps.h"
 #endif
 
-class PluginProcessor : public juce::AudioProcessor
+class PluginEditor;
+
+class PluginProcessor : public juce::AudioProcessor, juce::AudioProcessorParameter::Listener
 {
 public:
+    enum Parameter {
+        bypass,
+        band,
+        bandsInUse
+    };
+    static juce::String getParamString (Parameter param)
+    {
+        switch (param)
+        {
+            case bypass:
+                return "bypass";
+            case band:
+                return "band";
+            case bandsInUse:
+                return "bandsInUse";
+        }
+    }
+    float getBand (int index);
+    int updateBand (int index, double value);
+    void addBand (double value);
+    int removeBand (int index);
+    bool canAddBand();
+    int const bandNMax = 10;
+
     PluginProcessor();
     ~PluginProcessor() override;
 
@@ -46,28 +72,24 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    std::unique_ptr<juce::AudioParameterInt> delayMs = std::make_unique<juce::AudioParameterInt> ("paramID", "Parameter Name", 0, 5000, 800);
-
     // signalsmith::spectral::STFT<float> stft{1, 512, 64};
     // std::atomic<bool> stftReady = false;
+
+    int getBandsInUse();
+    // We need a separate FFTProcessor for each channel.
+    FFTProcessor fft[2];
 
     juce::AudioProcessorParameter* getBypassParameter() const override;
     juce::AudioProcessorValueTreeState apvts { *this, nullptr, "Parameters", createParameterLayout() };
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
-    // We need a separate FFTProcessor for each channel.
-    FFTProcessor fft[2];
-    
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 
-    int previousDelayMs;
-	double decayGain = 0.5;
+    juce::AudioParameterFloat* getBandParameter (int bandIndex);
+    juce::AudioParameterInt* getBandsInUseParameter();
+    juce::AudioProcessorEditor* editor = nullptr;
 
-    float wet = 0.5;
-
-	int delaySamples;
-    using Delay = signalsmith::delay::Delay<float, signalsmith::delay::InterpolatorNearest>;
-    Delay delay;
-
+    void parameterValueChanged (int, float) override;
+    void parameterGestureChanged (int, bool) override;
 };
