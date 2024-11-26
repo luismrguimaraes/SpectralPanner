@@ -31,6 +31,8 @@ public:
     void updateEditorValues();
 
 private:
+    bool initing = true; // if false, then it has initialized
+
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     PluginProcessor& processorRef;
@@ -50,7 +52,6 @@ private:
     std::vector<std::unique_ptr<juce::TextButton>> bandRemoveButtons;
 
     double getFreqFromLeft (float left);
-    bool initing = true;
 
     void mouseDoubleClick (const juce::MouseEvent& event) override;
 

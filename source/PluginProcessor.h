@@ -41,7 +41,7 @@ public:
     void addBand (double value);
     int removeBand (int index);
     bool canAddBand();
-    int const bandNMax = 4;
+    int const bandNMax = 10;
 
     PluginProcessor();
     ~PluginProcessor() override;
@@ -88,7 +88,7 @@ private:
 
     juce::AudioParameterFloat* getBandParameter (int bandIndex);
     juce::AudioParameterInt* getBandsInUseParameter();
-    juce::AudioProcessorEditor* editor;
+    juce::AudioProcessorEditor* editor = nullptr;
 
     void parameterValueChanged (int, float) override;
     void parameterGestureChanged (int, bool) override;

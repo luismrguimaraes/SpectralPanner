@@ -72,8 +72,12 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 
 PluginEditor::~PluginEditor()
 {
-    bandComponents.clear();
-    bandRemoveButtons.clear();
+    // bandComponents.clear();
+    // bandRemoveButtons.clear();
+
+    initing = true;
+
+    std::cout << "destroying" << std::endl;
 }
 
 void PluginEditor::newBand (bool _initing)

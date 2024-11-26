@@ -1,7 +1,6 @@
 #include "BandComponent.h"
 
 BandComponent::BandComponent()
-    : dragger(), dragConstrainer()
 {
     addAndMakeVisible (slider);
     slider.setRange (-1, 1, 0.1);

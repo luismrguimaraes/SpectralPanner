@@ -13,9 +13,6 @@ public:
     void paint (juce::Graphics& g) override;
     void resized() override;
 
-    juce::ComponentDragger dragger;
-    juce::ComponentBoundsConstrainer dragConstrainer;
-
     float left;
     float minimumLeft;
     bool isDraggable = true;
