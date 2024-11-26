@@ -77,7 +77,7 @@ PluginEditor::~PluginEditor()
 
     initing = true;
 
-    std::cout << "destroying" << std::endl;
+    std::cout << "destroying editor" << std::endl;
 }
 
 void PluginEditor::newBand (bool _initing)
@@ -100,6 +100,9 @@ void PluginEditor::newBand (bool _initing)
         return;
     }
 
+    std::cout << "adding band" << std::endl;
+
+    // -- band components--
     std::unique_ptr<BandComponent> newBandComponent = std::make_unique<BandComponent>();
     addAndMakeVisible (*newBandComponent);
     if (isFirstBand)
@@ -119,7 +122,9 @@ void PluginEditor::newBand (bool _initing)
     if (!_initing)
         processorRef.addBand (getFreqFromLeft (newBandComponent->left));
     bandComponents.push_back (std::move (newBandComponent));
+    // -- band components--
 
+    // -- band remove buttons --
     auto newBandRemoveButton = std::make_unique<juce::TextButton> ("-");
     if (!isFirstBand)
     {
@@ -130,6 +135,17 @@ void PluginEditor::newBand (bool _initing)
         };
     }
     bandRemoveButtons.push_back (std::move (newBandRemoveButton));
+    // -- band remove buttons --
+
+    // -- slider attachments --
+    auto lastBandIndex = (int) bandComponents.size() - 1;
+    auto parameterIdentifier = processorRef.getParamString (processorRef.Parameter::bandSlider) + juce::String (lastBandIndex);
+    auto newSliderAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processorRef.apvts, parameterIdentifier, bandComponents[lastBandIndex]->slider);
+    auto param = processorRef.apvts.getParameter (parameterIdentifier);
+    if (!_initing)
+        param->setValueNotifyingHost (param->getDefaultValue());
+    bandSliderAttachments.push_back (std::move (newSliderAttach));
+    // -- slider attachments --
 
     if (!_initing)
     {
@@ -146,6 +162,9 @@ void PluginEditor::removeBand (int bandID)
 {
     jassert (bandID < (int) bandComponents.size());
 
+    std::cout << "Removing band " << bandID << std::endl;
+
+    bandSliderAttachments.erase (bandSliderAttachments.begin() + bandID); // MUST RUN BEFORE bandComponents.erase() !!
     bandComponents.erase (bandComponents.begin() + bandID);
     bandRemoveButtons.erase (bandRemoveButtons.begin() + bandID);
     processorRef.removeBand (bandID);
@@ -159,7 +178,29 @@ void PluginEditor::removeBand (int bandID)
         bandRemoveButtons[i]->onClick = [&, i] {
             removeBand (i);
         };
+
+        // update slider attachments
+        if (i >= bandID)
+        {
+            // // move attachments after the band removed 1 band back
+
+            auto paramID = processorRef.getParamString (processorRef.Parameter::bandSlider) + juce::String (i);
+            auto nextParamID = processorRef.getParamString (processorRef.Parameter::bandSlider) + juce::String (i + 1);
+            std::cout << nextParamID << std::endl;
+
+            // remove attachment
+            bandSliderAttachments[i] = nullptr;
+
+            // create new attachment with updated value
+            auto newSliderAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processorRef.apvts, paramID, bandComponents[i]->slider);
+            processorRef.apvts.getParameter (paramID)->setValueNotifyingHost (processorRef.apvts.getParameter (nextParamID)->getValue());
+            bandSliderAttachments[i] = std::move (newSliderAttach);
+        }
     }
+
+    // reset last slider value param
+    auto lastParamID = processorRef.getParamString (processorRef.Parameter::bandSlider) + juce::String (processorRef.bandNMax - 1);
+    processorRef.apvts.getParameter (lastParamID)->setValueNotifyingHost (processorRef.apvts.getParameter (lastParamID)->getDefaultValue());
 
     // resized();
     updateProcessorValues();
@@ -192,6 +233,9 @@ void PluginEditor::resized()
         initing = false;
     }
 
+    jassert (bandComponents.size() == bandRemoveButtons.size());
+    jassert (bandComponents.size() == bandSliderAttachments.size());
+
     auto b = getLocalBounds().reduced (margin);
 
     // layout the positions of your child components here
@@ -211,7 +255,6 @@ void PluginEditor::resized()
         }
 
         // set bounds
-        jassert (bandComponents.size() == bandRemoveButtons.size());
         for (int i = bandComponents.size() - 1; i >= 0; --i)
         {
             if (i == 0)
@@ -266,7 +309,7 @@ void PluginEditor::updateProcessorValues()
 {
     for (int i = 0; i < bandComponents.size(); ++i)
     {
-        std::cout << "updating band " << i << " with value " << getFreqFromLeft (bandComponents[i]->left) << std::endl;
+        // std::cout << "updating band " << i << " with value " << getFreqFromLeft (bandComponents[i]->left) << std::endl;
         processorRef.updateBand (i, getFreqFromLeft (bandComponents[i]->left));
     }
 
@@ -318,7 +361,7 @@ void PluginEditor::handleAsyncUpdate()
 
         bandComponents[i]->left = value;
 
-        std::cout << "value: " << value << std::endl;
+        // std::cout << "value: " << value << std::endl;
     }
 
     // // render

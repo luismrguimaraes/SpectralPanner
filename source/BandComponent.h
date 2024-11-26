@@ -18,6 +18,7 @@ public:
     bool isDraggable = true;
 
     int bandID;
+    juce::Slider slider { juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow };
 
 private:
     void mouseDown (const juce::MouseEvent& event) override;
@@ -25,7 +26,6 @@ private:
     void mouseUp (const juce::MouseEvent& event) override;
     void mouseDoubleClick (const juce::MouseEvent& event) override;
 
-    juce::Slider slider { juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow };
 
     bool dragging = false;
     int dragStartX;

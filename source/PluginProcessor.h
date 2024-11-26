@@ -22,6 +22,7 @@ public:
     enum Parameter {
         bypass,
         band,
+        bandSlider,
         bandsInUse
     };
     static juce::String getParamString (Parameter param)
@@ -32,6 +33,8 @@ public:
                 return "bypass";
             case band:
                 return "band";
+            case bandSlider:
+                return "bandSlider";
             case bandsInUse:
                 return "bandsInUse";
         }
@@ -39,9 +42,9 @@ public:
     float getBand (int index);
     int updateBand (int index, double value);
     void addBand (double value);
-    int removeBand (int index);
+    int removeBand (int index = -1);
     bool canAddBand();
-    int const bandNMax = 10;
+    int const bandNMax = 5;
 
     PluginProcessor();
     ~PluginProcessor() override;

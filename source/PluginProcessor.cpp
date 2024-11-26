@@ -17,7 +17,7 @@ PluginProcessor::PluginProcessor()
 void PluginProcessor::parameterValueChanged (int parameterIndex, float newValue)
 {
     // Handle the parameter value change
-    juce::Logger::writeToLog ("Parameter " + juce::String (parameterIndex) + " changed to " + juce::String (newValue));
+    // juce::Logger::writeToLog ("Parameter " + juce::String (parameterIndex) + " changed to " + juce::String (newValue));
 
     if (editor != nullptr)
     {
@@ -334,6 +334,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
     paramInt->addListener (this);
     layout.add (std::move (paramInt));
 
+    // Band
     auto paramFloat = std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID (getParamString (Parameter::band) + "0", 1),
         "Band 1 start frequency",
@@ -343,10 +344,19 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
     paramFloat->addListener (this);
     layout.add (std::move (paramFloat));
 
-    int bandsParamsAmount = bandNMax - 1;
+    // Slider
+    paramFloat = std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID (getParamString (Parameter::bandSlider) + "0", 1),
+        "Band 1 Value",
+        -1.f,
+        1.f,
+        0.f);
+    layout.add (std::move (paramFloat));
 
-    for (int i = 0; i < bandsParamsAmount; i++)
+    int bandsParamsRemaining = bandNMax - 1;
+    for (int i = 0; i < bandsParamsRemaining; i++)
     {
+        // Band
         paramFloat = std::make_unique<juce::AudioParameterFloat> (
             juce::ParameterID (getParamString (Parameter::band) + juce::String (i + 1), 1),
             juce::String ("Band " + juce::String (i + 2) + " start frequency"),
@@ -354,6 +364,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
             20000.f,
             0.f);
         paramFloat->addListener (this);
+        layout.add (std::move (paramFloat));
+
+        // Slider
+        paramFloat = std::make_unique<juce::AudioParameterFloat> (
+            juce::ParameterID (getParamString (Parameter::bandSlider) + juce::String (i + 1), 1),
+            juce::String ("Band " + juce::String (i + 2) + " Value"),
+            -1.f,
+            1.f,
+            0.f);
         layout.add (std::move (paramFloat));
     }
 
