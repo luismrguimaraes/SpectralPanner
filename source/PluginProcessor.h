@@ -79,6 +79,7 @@ public:
     // std::atomic<bool> stftReady = false;
 
     int getBandsInUse();
+    float getBandSliderValue(int);
     // We need a separate FFTProcessor for each channel.
     FFTProcessor fft[2];
 
@@ -95,4 +96,6 @@ private:
 
     void parameterValueChanged (int, float) override;
     void parameterGestureChanged (int, bool) override;
+
+    void updateFFTProcessorMultipliers();
 };

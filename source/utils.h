@@ -9,3 +9,13 @@ inline int skewIndex (int index, float skewFactor)
 
     return skewedIndex;
 }
+
+inline int binFromFreq (double freq, int samplerate)
+{
+    return freq / samplerate * FFTProcessor::fftSize;
+}
+
+inline double freqFromBin (int bin, int samplerate)
+{
+    return bin / FFTProcessor::fftSize * samplerate;
+}

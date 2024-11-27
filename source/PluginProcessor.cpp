@@ -14,11 +14,38 @@ PluginProcessor::PluginProcessor()
 {
 }
 
+void PluginProcessor::updateFFTProcessorMultipliers()
+{
+    int firstBandBin;
+    int lastBandBin;
+    for (int band = 0; band < getBandsInUse(); ++band)
+    {
+        firstBandBin = binFromFreq (getBand (band), getSampleRate());
+        bool bandIsLast = band == getBandsInUse() - 1;
+        if (!bandIsLast)
+            lastBandBin = binFromFreq (getBand (band + 1), getSampleRate());
+        else
+            lastBandBin = FFTProcessor::numBins - 1;
+
+        auto sliderValue = getBandSliderValue (band);
+
+        std::cout << "band " << band << " with freq " << getBand (band) << " value " << sliderValue << std::endl;
+        std::cout << firstBandBin << " " << lastBandBin << std::endl;
+
+        for (int bin = firstBandBin; bin <= lastBandBin; bin++)
+        {
+            fft[0].spectralMultipliers.at (bin) = -sliderValue;
+            fft[1].spectralMultipliers.at (bin) = sliderValue;
+        }
+    }
+}
+
 void PluginProcessor::parameterValueChanged (int parameterIndex, float newValue)
 {
     // Handle the parameter value change
     // juce::Logger::writeToLog ("Parameter " + juce::String (parameterIndex) + " changed to " + juce::String (newValue));
 
+    // update PluginEditor
     if (editor != nullptr)
     {
         PluginEditor* ed = (PluginEditor*) editor;
@@ -29,6 +56,8 @@ void PluginProcessor::parameterValueChanged (int parameterIndex, float newValue)
     {
         std::cout << "Editor is nullptr" << std::endl;
     }
+
+    updateFFTProcessorMultipliers();
 }
 
 void PluginProcessor::parameterGestureChanged (int parameterIndex, bool gestureIsStarting)
@@ -37,6 +66,7 @@ void PluginProcessor::parameterGestureChanged (int parameterIndex, bool gestureI
     juce::Logger::writeToLog ("Parameter " + juce::String (parameterIndex) + (gestureIsStarting ? " started" : " stopped") + " being adjusted.");
 }
 
+// Get band start frequency
 float PluginProcessor::getBand (int index)
 {
     // std::cout << " arr size " << bandsArr.size() << std::endl;
@@ -99,6 +129,14 @@ int PluginProcessor::removeBand (int index)
     auto bandsInUseParam = getBandsInUseParameter();
     *bandsInUseParam = *bandsInUseParam - 1;
     return 0;
+}
+
+float PluginProcessor::getBandSliderValue (int sliderIndex)
+{
+    auto paramID = getParamString (Parameter::bandSlider) + juce::String (sliderIndex);
+    auto param = (juce::AudioParameterFloat*) apvts.getParameter (paramID);
+
+    return *param;
 }
 
 juce::AudioParameterFloat* PluginProcessor::getBandParameter (int bandIndex)
@@ -207,6 +245,8 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     fft[0].setSampleRate (sampleRate);
     fft[1].reset();
     fft[1].setSampleRate (sampleRate);
+
+    updateFFTProcessorMultipliers();
 }
 
 void PluginProcessor::releaseResources()
@@ -351,6 +391,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
         -1.f,
         1.f,
         0.f);
+    paramFloat->addListener (this);
     layout.add (std::move (paramFloat));
 
     int bandsParamsRemaining = bandNMax - 1;
@@ -373,6 +414,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
             -1.f,
             1.f,
             0.f);
+        paramFloat->addListener (this);
         layout.add (std::move (paramFloat));
     }
 

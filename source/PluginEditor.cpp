@@ -41,13 +41,13 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 
     addAndMakeVisible (bypassButton);
 
-    addAndMakeVisible (spectralSlider);
-    spectralSlider.setRange (-1, 1);
-    spectralSlider.setValue (0.0);
-    spectralSlider.onValueChange = [this] {
-        *processorRef.fft[0].spectralSliderValue = -spectralSlider.getValue();
-        *processorRef.fft[1].spectralSliderValue = spectralSlider.getValue();
-    };
+    // addAndMakeVisible (spectralSlider);
+    // spectralSlider.setRange (-1, 1);
+    // spectralSlider.setValue (0.0);
+    // spectralSlider.onValueChange = [this] {
+    //     *processorRef.fft[0].spectralSliderValue = -spectralSlider.getValue();
+    //     *processorRef.fft[1].spectralSliderValue = spectralSlider.getValue();
+    // };
 
     // addAndMakeVisible (freqMaxSlider);
     freqMaxSlider.setRange (1000, 20000);
@@ -312,20 +312,6 @@ void PluginEditor::updateProcessorValues()
         // std::cout << "updating band " << i << " with value " << getFreqFromLeft (bandComponents[i]->left) << std::endl;
         processorRef.updateBand (i, getFreqFromLeft (bandComponents[i]->left));
     }
-
-    // int bandIndex = 0;
-    // for (int i = 0; i < FFTProcessor::numBins; ++i)
-    // {
-    //     // Left
-    //     processorRef.fft[0].newSpectralMultipliers[i] =
-    //         // Right
-    //         processorRef.fft[1].newSpectralMultipliers[i] =
-    // }
-
-    // processorRef.fft[0].spectralMultipliersChanged.store (true);
-    // processorRef.fft[1].spectralMultipliersChanged.store (true);
-    // *processorRef.fft[0].spectralSliderValue = -spectralSlider.getValue();
-    // *processorRef.fft[1].spectralSliderValue = spectralSlider.getValue();
 }
 
 // Call when processor values (without attachments) changed (bands frequency and bands in use)

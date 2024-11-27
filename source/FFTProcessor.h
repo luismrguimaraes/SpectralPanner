@@ -19,6 +19,7 @@ public:
     void processBlock (float* data, int numSamples, bool bypassed);
 
     void setSampleRate (int sampleRate);
+    int getSampleRate ();
 
     // The FFT has 2^order points and fftSize/2 + 1 bins.
     static constexpr int fftOrder = 12;
@@ -31,7 +32,7 @@ public:
     std::atomic<bool> readyToDisplay = false;
     std::unique_ptr<double> spectralSliderValue = std::make_unique<double> (0.0);
 
-    std::vector<float> newSpectralMultipliers;
+    std::vector<float> spectralMultipliers;
     std::atomic<bool> spectralMultipliersChanged;
 
 private:
@@ -58,8 +59,6 @@ private:
     std::array<float, fftSize> outputFifo;
 
     int sampleRate;
-
-    std::vector<float> spectralMultipliers;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FFTProcessor)
 };

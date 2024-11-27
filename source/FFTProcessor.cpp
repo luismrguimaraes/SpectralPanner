@@ -6,6 +6,11 @@ FFTProcessor::FFTProcessor() : fft (fftOrder),
     // Note that the window is of length `fftSize + 1` because JUCE's windows
     // are symmetrical, which is wrong for overlap-add processing. To make the
     // window periodic, set size to 1025 but only use the first 1024 samples.
+
+    for (int i = 0; i < numBins; ++i)
+    {
+        spectralMultipliers.push_back (0.0);
+    }
 }
 
 void FFTProcessor::reset()
@@ -19,18 +24,21 @@ void FFTProcessor::reset()
 
     // reset spectral multipliers arrays
     spectralMultipliers.clear();
-    newSpectralMultipliers.clear();
     spectralMultipliersChanged.store (false);
     for (int i = 0; i < numBins; ++i)
     {
         spectralMultipliers.push_back (0.0);
-        newSpectralMultipliers.push_back (0.0);
     }
 }
 
 void FFTProcessor::setSampleRate (int _sampleRate)
 {
     sampleRate = _sampleRate;
+}
+
+int FFTProcessor::getSampleRate()
+{
+    return sampleRate;
 }
 
 void FFTProcessor::processBlock (float* data, int numSamples, bool bypassed)
@@ -129,7 +137,8 @@ void FFTProcessor::processSpectrum (float* data, int _numBins)
     // but it's easier to deal with this as std::complex values.
     auto* cdata = reinterpret_cast<std::complex<float>*> (data);
 
-    for (int i = 0; i < _numBins; ++i)
+    // skip bin 0
+    for (int i = 1; i < _numBins; ++i)
     {
         // Usually we want to work with the magnitude and phase rather
         // than the real and imaginary parts directly.
@@ -138,8 +147,9 @@ void FFTProcessor::processSpectrum (float* data, int _numBins)
 
         // This is where you'd do your spectral processing...
 
-        // apply global panning
-        magnitude *= 1.0 + *spectralSliderValue;
+        // do parameter smoothing ??
+        // apply panning
+        magnitude *= 1.0 + spectralMultipliers[i];
 
         // fill/update fftDisplayable
         fftDisplayable[i] = magnitude;

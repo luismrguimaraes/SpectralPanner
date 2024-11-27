@@ -49,8 +49,7 @@ void FFTVisualizer::drawNextFrameOfSpectrum()
 
 void FFTVisualizer::drawFrame (juce::Graphics& g)
 {
-    // index that has freqMax: sampleRate / fftSize * i = freqMax
-    int indexMax = freqMax * FFTProcessor::fftSize / processorRef->getSampleRate();
+    int indexMax = binFromFreq (freqMax, processorRef->getSampleRate());
     indexMax = skewIndex (indexMax, 1 / skewFactor);
     if (indexMax == 0)
         return; // avoid jmap assertion error
