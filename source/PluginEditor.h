@@ -31,7 +31,7 @@ public:
     void updateEditorValues();
 
 private:
-    bool initing = true; // if false, then it has initialized
+    std::atomic<bool> initing = true; // if false, then it has initialized
 
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.

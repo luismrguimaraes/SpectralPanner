@@ -68,6 +68,8 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     setSize (800, 500);
     //setResizable (true, true);
     //setResizeLimits (500, 300, 10000, 10000);
+
+    std::cout << "--------------Initing:" << initing.load() << std::endl;
 }
 
 PluginEditor::~PluginEditor()
@@ -75,7 +77,9 @@ PluginEditor::~PluginEditor()
     // bandComponents.clear();
     // bandRemoveButtons.clear();
 
-    initing = true;
+    initing.store (true);
+
+    processorRef.editorCreated.store (false);
 
     std::cout << "destroying editor" << std::endl;
 }
@@ -224,13 +228,15 @@ void PluginEditor::paint (juce::Graphics& g)
 
 void PluginEditor::resized()
 {
-    if (initing)
+    if (initing.load())
     {
         for (int i = 0; i < processorRef.getBandsInUse(); ++i)
         {
             newBand (true);
         }
-        initing = false;
+        initing.store (false);
+
+        // processorRef.editorCreated.store (true);
     }
 
     jassert (bandComponents.size() == bandRemoveButtons.size());
@@ -317,7 +323,7 @@ void PluginEditor::updateProcessorValues()
 // Call when processor values (without attachments) changed (bands frequency and bands in use)
 void PluginEditor::updateEditorValues()
 {
-    if (!initing)
+    if (!initing.load())
         triggerAsyncUpdate();
 }
 void PluginEditor::handleAsyncUpdate()

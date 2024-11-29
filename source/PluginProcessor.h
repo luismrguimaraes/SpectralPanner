@@ -44,7 +44,7 @@ public:
     void addBand (double value);
     int removeBand (int index = -1);
     bool canAddBand();
-    int const bandNMax = 5;
+    int const bandNMax = 10;
 
     PluginProcessor();
     ~PluginProcessor() override;
@@ -79,13 +79,15 @@ public:
     // std::atomic<bool> stftReady = false;
 
     int getBandsInUse();
-    float getBandSliderValue(int);
+    float getBandSliderValue (int);
     // We need a separate FFTProcessor for each channel.
     FFTProcessor fft[2];
 
     juce::AudioProcessorParameter* getBypassParameter() const override;
     juce::AudioProcessorValueTreeState apvts { *this, nullptr, "Parameters", createParameterLayout() };
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+
+    std::atomic<bool> editorCreated = false;
 
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)

@@ -12,6 +12,7 @@ PluginProcessor::PluginProcessor()
 #endif
     )
 {
+    editorCreated.store (false);
 }
 
 void PluginProcessor::updateFFTProcessorMultipliers()
@@ -48,9 +49,22 @@ void PluginProcessor::parameterValueChanged (int parameterIndex, float newValue)
     // update PluginEditor
     if (editor != nullptr)
     {
-        PluginEditor* ed = (PluginEditor*) editor;
-        if (ed != nullptr)
-            ed->updateEditorValues();
+        if (editorCreated.load())
+        {
+            PluginEditor* ed = (PluginEditor*) editor;
+            if (ed != nullptr)
+            {
+                ed->updateEditorValues();
+            }
+            else
+            {
+                std::cout << "editor not nullptr, but is after cast" << std::endl;
+            }
+        }
+        else
+        {
+            std::cout << "----------------------editor not created" << std::endl;
+        }
     }
     else
     {
@@ -328,6 +342,8 @@ bool PluginProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* PluginProcessor::createEditor()
 {
+    std::cout << "creating editor" << std::endl;
+
     editor = new PluginEditor (*this);
     return editor;
 }
