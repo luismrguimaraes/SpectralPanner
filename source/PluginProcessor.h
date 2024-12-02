@@ -19,6 +19,10 @@ class PluginEditor;
 class PluginProcessor : public juce::AudioProcessor, juce::AudioProcessorParameter::Listener
 {
 public:
+    // KEEP THIS HERE. for some reason parameterValueChanged was using this with value
+    // true, when it was the last public declaration.
+    std::atomic<bool> editorCreated = false;
+
     enum Parameter {
         bypass,
         band,
@@ -86,8 +90,6 @@ public:
     juce::AudioProcessorParameter* getBypassParameter() const override;
     juce::AudioProcessorValueTreeState apvts { *this, nullptr, "Parameters", createParameterLayout() };
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
-
-    std::atomic<bool> editorCreated = false;
 
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)

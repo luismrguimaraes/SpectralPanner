@@ -236,7 +236,7 @@ void PluginEditor::resized()
         }
         initing.store (false);
 
-        // processorRef.editorCreated.store (true);
+        processorRef.editorCreated.store (true);
     }
 
     jassert (bandComponents.size() == bandRemoveButtons.size());

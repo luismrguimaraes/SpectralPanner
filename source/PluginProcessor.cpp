@@ -54,6 +54,7 @@ void PluginProcessor::parameterValueChanged (int parameterIndex, float newValue)
             PluginEditor* ed = (PluginEditor*) editor;
             if (ed != nullptr)
             {
+                std::cout << "editorCreated: " << editorCreated << std::endl;
                 ed->updateEditorValues();
             }
             else
@@ -401,11 +402,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
     layout.add (std::move (paramFloat));
 
     // Slider
+    juce::NormalisableRange<float> sliderLogRange (-1.0f, 1.0f, 0.0001f, 0.5f, true);
     paramFloat = std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID (getParamString (Parameter::bandSlider) + "0", 1),
         "Band 1 Value",
-        -1.f,
-        1.f,
+        sliderLogRange,
         0.f);
     paramFloat->addListener (this);
     layout.add (std::move (paramFloat));
@@ -427,8 +428,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
         paramFloat = std::make_unique<juce::AudioParameterFloat> (
             juce::ParameterID (getParamString (Parameter::bandSlider) + juce::String (i + 1), 1),
             juce::String ("Band " + juce::String (i + 2) + " Value"),
-            -1.f,
-            1.f,
+            sliderLogRange,
             0.f);
         paramFloat->addListener (this);
         layout.add (std::move (paramFloat));

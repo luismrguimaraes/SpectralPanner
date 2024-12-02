@@ -3,7 +3,7 @@
 BandComponent::BandComponent()
 {
     addAndMakeVisible (slider);
-    slider.setRange (-1, 1, 0.1);
+    // slider.setRange (-1, 1);
     slider.setValue (0.0);
 }
 

@@ -26,7 +26,6 @@ private:
     void mouseUp (const juce::MouseEvent& event) override;
     void mouseDoubleClick (const juce::MouseEvent& event) override;
 
-
     bool dragging = false;
     int dragStartX;
     int dragStartWidth;
