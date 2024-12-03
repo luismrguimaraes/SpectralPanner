@@ -52,8 +52,8 @@ private:
     std::vector<std::unique_ptr<juce::TextButton>> bandRemoveButtons;
     std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>> bandSliderAttachments;
 
-
     double getFreqFromLeft (float left);
+    float getLeftFromFreq (double freq);
 
     void mouseDoubleClick (const juce::MouseEvent& event) override;
 

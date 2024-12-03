@@ -300,15 +300,25 @@ double inline PluginEditor::getFreqFromLeft (float left)
 {
     auto b = getLocalBounds().reduced (margin);
 
-    double value = 0;
+    double value0To1 = 0;
     if (juce::approximatelyEqual (b.getX(), b.getX() + b.getWidth()))
     {
         std::cout << "getFreqFromLeft error" << std::endl;
-        return value;
+        return value0To1;
     };
 
-    value = juce::jmap ((float) left, (float) b.getX(), (float) b.getX() + b.getWidth(), 0.f, 1.f);
-    return value * fftVis->freqMax;
+    value0To1 = juce::jmap ((float) left, (float) b.getX(), (float) b.getX() + b.getWidth(), 0.f, 1.f);
+    // auto freq = value * (fftVis->freqMax - fftVis->freqMin) + fftVis->freqMin;
+
+    return logScaleFrom0To1 (value0To1);
+}
+
+float inline PluginEditor::getLeftFromFreq (double freq)
+{
+    auto b = getLocalBounds().reduced (margin);
+
+    float left = juce::jmap ((float) logScale0To1 (freq), (float) b.getX(), (float) b.getX() + b.getWidth());
+    return left;
 }
 
 void PluginEditor::updateProcessorValues()
@@ -340,7 +350,7 @@ void PluginEditor::handleAsyncUpdate()
     }
     for (int i = 1; i < processorRef.getBandsInUse(); ++i)
     {
-        auto value = juce::jmap (processorRef.getBand (i), 0.f, 20000.f, (float) b.getX(), (float) b.getX() + b.getWidth());
+        // auto value = juce::jmap (processorRef.getBand (i), 0.f, 20000.f, (float) b.getX(), (float) b.getX() + b.getWidth());
         //     auto min = juce::jmap ((int) processorRef.getBand (i - 1) + 50, 0, 20000, b.getX(), b.getX() + b.getWidth());
         //     auto max = -1;
         //     if (i < processorRef.getBandsInUse() - 1)
@@ -351,7 +361,7 @@ void PluginEditor::handleAsyncUpdate()
         //     if (value > max)
         //         value = max;
 
-        bandComponents[i]->left = value;
+        bandComponents[i]->left = getLeftFromFreq (processorRef.getBand (i));
 
         // std::cout << "value: " << value << std::endl;
     }

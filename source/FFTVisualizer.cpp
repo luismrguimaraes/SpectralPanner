@@ -5,7 +5,7 @@ FFTVisualizer::FFTVisualizer()
 {
     startTimer (50);
 
-    for (int i = 0; i < FFTProcessor::fftSize; ++i)
+    for (int i = 0; i < FFTProcessor::numBins; ++i)
     {
         scopeDataL[i] = 0;
         scopeDataR[i] = 0;
@@ -27,9 +27,7 @@ void FFTVisualizer::drawNextFrameOfSpectrum()
 {
     for (int i = 0; i < FFTProcessor::numBins; ++i)
     {
-        // auto skewedProportionX = 1.0f - std::exp (std::log (1.0f - (float) i / (float) FFTProcessor::numBins) * skewFactor);
-        // auto fftDataIndex = juce::jlimit (0, FFTProcessor::numBins, (int) (skewedProportionX * (float) FFTProcessor::numBins));
-        auto fftDataIndex = skewIndex (i, skewFactor);
+        auto fftDataIndex = i;
 
         auto levelL = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (processorRef->fft[0].fftDisplayable[fftDataIndex]) - juce::Decibels::gainToDecibels ((float) FFTProcessor::fftSize)),
             mindB,
@@ -50,7 +48,6 @@ void FFTVisualizer::drawNextFrameOfSpectrum()
 void FFTVisualizer::drawFrame (juce::Graphics& g)
 {
     int indexMax = binFromFreq (freqMax, processorRef->getSampleRate());
-    indexMax = skewIndex (indexMax, 1 / skewFactor);
     if (indexMax == 0)
         return; // avoid jmap assertion error
 
@@ -60,13 +57,30 @@ void FFTVisualizer::drawFrame (juce::Graphics& g)
     // set lines colour
     g.setColour (juce::Colours::grey.darker());
 
-    // every 1000k or so, draw a vertical line
-    for (int freq = 1000; freq < freqMax; freq += 1000)
+    // draw a vertical lines
+    for (int freq = freqMin; freq < freqMax;)
     {
-        g.drawLine ({ (float) juce::jmap (freq, 0, (int) freqMax, 0, width),
+        g.drawLine ({ (float) juce::jmap (logScale0To1 (freq), 0.0, (double) width),
             (float) height,
-            (float) juce::jmap (freq, 0, (int) freqMax, 0, width),
+            (float) juce::jmap (logScale0To1 (freq), 0.0, (double) width),
             0.0f });
+
+        if (freq < 100)
+        {
+            freq += 10;
+        }
+        else if (freq < 1000)
+        {
+            freq += 100;
+        }
+        else if (freq < 10000)
+        {
+            freq += 1000;
+        }
+        else if (freq < 100000)
+        {
+            freq += 10000;
+        }
     }
 
     // horizontal line every 6 db
@@ -80,18 +94,24 @@ void FFTVisualizer::drawFrame (juce::Graphics& g)
 
     for (int i = 1; i < FFTProcessor::numBins; ++i)
     {
-        auto iSkewed = skewIndex (i, 1 / skewFactor);
+        auto binFreq = freqFromBin (i, processorRef->getSampleRate());
+        auto previousBinFreq = freqFromBin (i - 1, processorRef->getSampleRate());
+
+        if (previousBinFreq < freqMin)
+        {
+            continue;
+        }
 
         g.setColour (juce::Colours::beige);
-        g.drawLine ({ (float) juce::jmap (iSkewed - 1, 0, indexMax, 0, width),
+        g.drawLine ({ (float) juce::jmap (logScale0To1 (previousBinFreq), 0.0, (double) width),
             juce::jmap (scopeDataL[i - 1], 0.0f, 1.0f, (float) height, 0.0f),
-            (float) juce::jmap (iSkewed, 0, indexMax, 0, width),
+            (float) juce::jmap (logScale0To1 (binFreq), 0.0, (double) width),
             juce::jmap (scopeDataL[i], 0.0f, 1.0f, (float) height, 0.0f) });
 
         g.setColour (juce::Colours::darkcyan);
-        g.drawLine ({ (float) juce::jmap (iSkewed - 1, 0, indexMax, 0, width),
+        g.drawLine ({ (float) juce::jmap (logScale0To1 (previousBinFreq), 0.0, (double) width),
             juce::jmap (scopeDataR[i - 1], 0.0f, 1.0f, (float) height, 0.0f),
-            (float) juce::jmap (iSkewed, 0, indexMax, 0, width),
+            (float) juce::jmap (logScale0To1 (binFreq), 0.0, (double) width),
             juce::jmap (scopeDataR[i], 0.0f, 1.0f, (float) height, 0.0f) });
     }
 }

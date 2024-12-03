@@ -13,8 +13,8 @@ class FFTVisualizer : public juce::Component, juce::Timer
 public:
     FFTVisualizer();
 
-    float scopeDataL[FFTProcessor::fftSize];
-    float scopeDataR[FFTProcessor::fftSize];
+    float scopeDataL[FFTProcessor::numBins];
+    float scopeDataR[FFTProcessor::numBins];
 
     void paint (juce::Graphics& g) override;
     void timerCallback() override;
@@ -22,6 +22,7 @@ public:
     PluginProcessor* processorRef;
 
     float freqMax = 20000;
+    float freqMin = 20;
     float skewFactor = 1;
 
     float mindB = -100.0f;
