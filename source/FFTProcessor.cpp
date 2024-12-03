@@ -149,7 +149,21 @@ void FFTProcessor::processSpectrum (float* data, int _numBins)
 
         // do parameter smoothing ??
         // apply panning
-        magnitude *= 1.0 + spectralMultipliers[i];
+        // float threeDBGain = juce::Decibels::decibelsToGain (3.0);
+        // float minusThreeDBGain = juce::Decibels::decibelsToGain (-3.0);
+        float sixDBGain = juce::Decibels::decibelsToGain (6.0);
+        if (spectralMultipliers[i] > 0.0f)
+        {
+            magnitude *= juce::jmap (spectralMultipliers[i], 1.f, sixDBGain);
+        }
+        else if (spectralMultipliers[i] < 0.0f)
+        {
+            magnitude *= juce::jmap (spectralMultipliers[i], 0.f, -1.f, 1.f, 0.f);
+
+            std::cout << juce::jmap (spectralMultipliers[i], 0.f, -1.f, 1.f, 0.f) << std::endl;
+        }
+
+        // magnitude *= (1.0 + spectralMultipliers[i]) / 2.0;
 
         // fill/update fftDisplayable
         fftDisplayable[i] = magnitude;
