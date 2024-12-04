@@ -35,8 +35,9 @@ void PluginProcessor::updateFFTProcessorMultipliers()
 
         for (int bin = firstBandBin; bin <= lastBandBin; bin++)
         {
-            fft[0].spectralMultipliers.at (bin) = -sliderValue;
-            fft[1].spectralMultipliers.at (bin) = sliderValue;
+            // fft[0].spectralPanValues.at (bin) = -sliderValue;
+            // fft[1].spectralPanValues.at (bin) = sliderValue;
+            fftProc.spectralPanValues.at (bin) = sliderValue;
         }
     }
 }
@@ -100,7 +101,7 @@ int PluginProcessor::updateBand (int index, double value)
     // auto arr = bandsArr.getArray();
     // arr->set (index, value);
 
-    // // update FFTProcessor spectralMultipliers?
+    // // update FFTProcessor spectralPanValues?
     // // ...
 
     // std::cout << "size " << bandsArr.size() << std::endl;
@@ -254,12 +255,10 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     // initialisation that you need..
     juce::ignoreUnused (sampleRate, samplesPerBlock);
 
-    setLatencySamples (fft[0].getLatencyInSamples());
+    setLatencySamples (fftProc.getLatencyInSamples());
 
-    fft[0].reset();
-    fft[0].setSampleRate (sampleRate);
-    fft[1].reset();
-    fft[1].setSampleRate (sampleRate);
+    fftProc.reset();
+    fftProc.setSampleRate (sampleRate);
 
     updateFFTProcessorMultipliers();
 }
@@ -328,11 +327,9 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     bool bypassed = apvts.getRawParameterValue (getParamString (Parameter::bypass))->load();
 
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
-        fft[channel].processBlock (channelData, numSamples, bypassed);
-    }
+    auto* channelDataL = buffer.getWritePointer (0);
+    auto* channelDataR = buffer.getWritePointer (1);
+    fftProc.processBlock (channelDataL, channelDataR, numSamples, bypassed);
 }
 
 //==============================================================================

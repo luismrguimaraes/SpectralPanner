@@ -14,11 +14,10 @@ FFTVisualizer::FFTVisualizer()
 
 void FFTVisualizer::timerCallback()
 {
-    if (processorRef->fft[0].readyToDisplay.load() && processorRef->fft[1].readyToDisplay.load())
+    if (processorRef->fftProc.readyToDisplay.load())
     {
         drawNextFrameOfSpectrum();
-        processorRef->fft[0].readyToDisplay.store (false);
-        processorRef->fft[1].readyToDisplay.store (false);
+        processorRef->fftProc.readyToDisplay.store (false);
         repaint();
     }
 }
@@ -29,14 +28,14 @@ void FFTVisualizer::drawNextFrameOfSpectrum()
     {
         auto fftDataIndex = i;
 
-        auto levelL = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (processorRef->fft[0].fftDisplayable[fftDataIndex]) - juce::Decibels::gainToDecibels ((float) FFTProcessor::fftSize)),
+        auto levelL = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (processorRef->fftProc.fftDisplayableL[fftDataIndex]) - juce::Decibels::gainToDecibels ((float) FFTProcessor::fftSize)),
             mindB,
             maxdB,
             0.0f,
             1.0f);
         scopeDataL[i] = levelL;
 
-        auto levelR = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (processorRef->fft[1].fftDisplayable[fftDataIndex]) - juce::Decibels::gainToDecibels ((float) FFTProcessor::fftSize)),
+        auto levelR = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (processorRef->fftProc.fftDisplayableR[fftDataIndex]) - juce::Decibels::gainToDecibels ((float) FFTProcessor::fftSize)),
             mindB,
             maxdB,
             0.0f,

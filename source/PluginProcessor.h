@@ -85,7 +85,7 @@ public:
     int getBandsInUse();
     float getBandSliderValue (int);
     // We need a separate FFTProcessor for each channel.
-    FFTProcessor fft[2];
+    FFTProcessor fftProc;
 
     juce::AudioProcessorParameter* getBypassParameter() const override;
     juce::AudioProcessorValueTreeState apvts { *this, nullptr, "Parameters", createParameterLayout() };
