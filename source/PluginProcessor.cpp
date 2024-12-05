@@ -15,7 +15,7 @@ PluginProcessor::PluginProcessor()
     editorCreated.store (false);
 }
 
-void PluginProcessor::updateFFTProcessorMultipliers()
+void PluginProcessor::updateFFTProcessorPanValues()
 {
     int firstBandBin;
     int lastBandBin;
@@ -73,7 +73,8 @@ void PluginProcessor::parameterValueChanged (int parameterIndex, float newValue)
         std::cout << "Editor is nullptr" << std::endl;
     }
 
-    updateFFTProcessorMultipliers();
+    updateFFTProcessorPanValues();
+    fftProc.setPanLaw (apvts.getRawParameterValue (getParamString (Parameter::panLaw))->load());
 }
 
 void PluginProcessor::parameterGestureChanged (int parameterIndex, bool gestureIsStarting)
@@ -260,7 +261,7 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     fftProc.reset();
     fftProc.setSampleRate (sampleRate);
 
-    updateFFTProcessorMultipliers();
+    updateFFTProcessorPanValues();
 }
 
 void PluginProcessor::releaseResources()
@@ -430,6 +431,16 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
         paramFloat->addListener (this);
         layout.add (std::move (paramFloat));
     }
+
+    // Pan Law
+    paramInt = std::make_unique<juce::AudioParameterInt> (
+        juce::ParameterID (getParamString (Parameter::panLaw), 1),
+        "Pan Law",
+        0.f,
+        6.f,
+        0.f);
+    paramInt->addListener (this);
+    layout.add (std::move (paramInt));
 
     return layout;
 }

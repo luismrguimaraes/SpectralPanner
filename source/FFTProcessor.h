@@ -20,6 +20,7 @@ public:
 
     void setSampleRate (int sampleRate);
     int getSampleRate();
+    void setPanLaw (float panLawDB);
 
     // The FFT has 2^order points and fftSize/2 + 1 bins.
     static constexpr int fftOrder = 12;
@@ -62,6 +63,7 @@ private:
     std::array<float, fftSize> outputFifoR;
 
     int sampleRate;
+    float panLawDB = 0.f;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FFTProcessor)
 };

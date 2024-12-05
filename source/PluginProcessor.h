@@ -27,7 +27,8 @@ public:
         bypass,
         band,
         bandSlider,
-        bandsInUse
+        bandsInUse,
+        panLaw
     };
     static juce::String getParamString (Parameter param)
     {
@@ -41,6 +42,8 @@ public:
                 return "bandSlider";
             case bandsInUse:
                 return "bandsInUse";
+            case panLaw:
+                return "panLaw";
         }
     }
     float getBand (int index);
@@ -101,5 +104,5 @@ private:
     void parameterValueChanged (int, float) override;
     void parameterGestureChanged (int, bool) override;
 
-    void updateFFTProcessorMultipliers();
+    void updateFFTProcessorPanValues();
 };

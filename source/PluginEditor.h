@@ -42,6 +42,8 @@ private:
     void newBand (bool _initing = false);
     juce::ToggleButton bypassButton;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassButtonAtt;
+    juce::Slider panLawSlider;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> panLawSliderAtt;
 
     juce::Slider spectralSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxBelow };
     juce::Slider freqMaxSlider;

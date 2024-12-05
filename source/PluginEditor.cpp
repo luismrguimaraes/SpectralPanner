@@ -6,6 +6,7 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     juce::ignoreUnused (processorRef);
 
     bypassButtonAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (processorRef.apvts, processorRef.getParamString (processorRef.Parameter::bypass), bypassButton);
+    panLawSliderAtt = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processorRef.apvts, processorRef.getParamString (processorRef.Parameter::panLaw), panLawSlider);
 
     fftVis = std::make_unique<FFTVisualizer>();
     addAndMakeVisible (*fftVis);
@@ -40,6 +41,7 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     };
 
     addAndMakeVisible (bypassButton);
+    addAndMakeVisible (panLawSlider);
 
     // addAndMakeVisible (spectralSlider);
     // spectralSlider.setRange (-1, 1);
@@ -285,10 +287,12 @@ void PluginEditor::resized()
     newBandButton.setBounds (getLocalBounds().withWidth (200).withHeight (50).withY (getLocalBounds().getBottom() - 50));
     bypassButton.setBounds (getLocalBounds().withWidth (50).withHeight (50).withY (getLocalBounds().getBottom() - 50));
 
-    spectralSlider.setBounds (b.withHeight (100));
+    panLawSlider.setBounds (getLocalBounds().withWidth (200).withHeight (50).withY (0).withX (getLocalBounds().getRight() - 200));
 
-    freqMaxSlider.setBounds (b.withWidth (b.getWidth() / 2).withX (b.getWidth() / 2 + 50).withHeight (50).withY (b.getHeight() + 25));
-    skewFactorSlider.setBounds (b.withWidth (b.getWidth() / 2).withHeight (50).withY (b.getHeight() + 25));
+    // spectralSlider.setBounds (b.withHeight (100));
+
+    // freqMaxSlider.setBounds (b.withWidth (b.getWidth() / 2).withX (b.getWidth() / 2 + 50).withHeight (50).withY (b.getHeight() + 25));
+    // skewFactorSlider.setBounds (b.withWidth (b.getWidth() / 2).withHeight (50).withY (b.getHeight() + 25));
 }
 
 void PluginEditor::mouseDoubleClick (const juce::MouseEvent& event)
@@ -323,7 +327,7 @@ float inline PluginEditor::getLeftFromFreq (double freq)
 
 void PluginEditor::updateProcessorValues()
 {
-    for (int i = 0; i < bandComponents.size(); ++i)
+    for (int i = 1; i < bandComponents.size(); ++i)
     {
         // std::cout << "updating band " << i << " with value " << getFreqFromLeft (bandComponents[i]->left) << std::endl;
         processorRef.updateBand (i, getFreqFromLeft (bandComponents[i]->left));

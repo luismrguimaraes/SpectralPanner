@@ -33,6 +33,14 @@ void BandComponent::resized()
         newBounds = newBounds.withX (newBounds.getX() + xIncrement).withWidth (newBounds.getWidth() - xIncrement);
     }
     slider.setBounds (newBounds);
+    if (newBounds.getWidth() < 90)
+    {
+        slider.setSliderStyle (juce::Slider::SliderStyle::LinearVertical);
+    }
+    else
+    {
+        slider.setSliderStyle (juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag);
+    }
 }
 
 void BandComponent::mouseDown (const juce::MouseEvent& event)

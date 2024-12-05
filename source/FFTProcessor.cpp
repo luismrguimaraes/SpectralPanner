@@ -153,6 +153,12 @@ void FFTProcessor::processFrame (bool bypassed)
     readyToDisplay.store (true);
 }
 
+void FFTProcessor::setPanLaw (float _panLawDB)
+{
+    if ((_panLawDB > 0.f && _panLawDB < 6.f) || juce::approximatelyEqual (_panLawDB, 0.f))
+        panLawDB = _panLawDB;
+}
+
 void FFTProcessor::processSpectrum (float* dataL, float* dataR, int _numBins)
 {
     // The spectrum data is floats organized as [re, im, re, im, ...]
@@ -163,8 +169,9 @@ void FFTProcessor::processSpectrum (float* dataL, float* dataR, int _numBins)
     // skip bin 0
     for (int i = 1; i < _numBins; ++i)
     {
-        // panning the complex numbers,
-        float dbLawGain = juce::Decibels::decibelsToGain (6.0);
+        float panLawGain = juce::Decibels::decibelsToGain (panLawDB);
+
+        // Stereo Panning
 
         // Usually we want to work with the magnitude and phase rather
         // than the real and imaginary parts directly.
@@ -175,20 +182,22 @@ void FFTProcessor::processSpectrum (float* dataL, float* dataR, int _numBins)
 
         // This is where you'd do your spectral processing...
 
-        // do parameter smoothing ??
-        // apply panning
         // float threeDBGain = juce::Decibels::decibelsToGain (3.0);
         // float minusThreeDBGain = juce::Decibels::decibelsToGain (-3.0);
         // float dbLawGain = juce::Decibels::decibelsToGain (6.0);
-        // if (spectralPanValues[i] > 0.0f)
-        // {
-        //     magnitudeL *= juce::jmap (spectralPanValues[i], 0.f, -1.f, 1.f, 0.f);
-        //     magnitudeR *= juce::jmap (spectralPanValues[i], 1.f, dbLawGain);
-        // }
-        // else if (spectralPanValues[i] < 0.0f)
-        // {
-        //     magnitudeL *= juce::jmap (spectralPanValues[i], 0.f, -1.f, 1.f, 0.f);
-        // }
+
+        // Stereo Balance Panning
+        if (spectralPanValues[i] > 0.0f)
+        {
+            magnitudeL *= juce::jmap (spectralPanValues[i], 1.f, 0.f);
+            magnitudeR *= juce::jmap (spectralPanValues[i], 1.f, panLawGain);
+        }
+        else if (spectralPanValues[i] < 0.0f)
+        {
+            magnitudeL *= juce::jmap (spectralPanValues[i], 0.f, -1.f, 1.f, panLawGain);
+            // std::cout << juce::jmap (spectralPanValues[i], 0.f, -1.f, 1.f, 1.f) << std::endl;
+            magnitudeR *= juce::jmap (spectralPanValues[i], 0.f, -1.f, 1.f, 0.f);
+        }
 
         // fill/update fftDisplayable
         fftDisplayableL[i] = magnitudeL;
