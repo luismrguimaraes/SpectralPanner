@@ -3,7 +3,7 @@
 
 FFTVisualizer::FFTVisualizer()
 {
-    startTimer (50);
+    startTimer ((1.0 / 30.0) * 1000.0); // 30 fps
 
     for (int i = 0; i < FFTProcessor::numBins; ++i)
     {

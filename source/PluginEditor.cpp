@@ -67,7 +67,7 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize (800, 500);
+    setSize (850, 550);
     //setResizable (true, true);
     //setResizeLimits (500, 300, 10000, 10000);
 
@@ -119,10 +119,13 @@ void PluginEditor::newBand (bool _initing)
     if (_initing)
     {
         auto b = getLocalBounds().reduced (margin);
-        newBandComponent->left = juce::jmap (processorRef.getBand ((int) bandComponents.size()), 0.f, 20000.f, (float) b.getX(), (float) b.getX() + b.getWidth());
+        newBandComponent->left = getLeftFromFreq (processorRef.getBand ((int) bandComponents.size()));
     }
     else
+    {
+        std::cout << "newLeft:" << newLeft << std::endl;
         newBandComponent->left = newLeft;
+    }
     newBandComponent->bandID = (int) bandComponents.size();
 
     if (!_initing)
@@ -320,6 +323,9 @@ double inline PluginEditor::getFreqFromLeft (float left)
 float inline PluginEditor::getLeftFromFreq (double freq)
 {
     auto b = getLocalBounds().reduced (margin);
+
+    // clip freq
+    freq = juce::jlimit (20.0, 20000.0, freq);
 
     float left = juce::jmap ((float) logScale0To1 (freq), (float) b.getX(), (float) b.getX() + b.getWidth());
     return left;

@@ -21,7 +21,10 @@ void PluginProcessor::updateFFTProcessorPanValues()
     int lastBandBin;
     for (int band = 0; band < getBandsInUse(); ++band)
     {
-        firstBandBin = binFromFreq (getBand (band), getSampleRate());
+        if (band == 0)
+            firstBandBin = 1; // keep bin 0 (DC offset) unmodified
+        else
+            firstBandBin = binFromFreq (getBand (band), getSampleRate());
         bool bandIsLast = band == getBandsInUse() - 1;
         if (!bandIsLast)
             lastBandBin = binFromFreq (getBand (band + 1), getSampleRate());
@@ -31,7 +34,6 @@ void PluginProcessor::updateFFTProcessorPanValues()
         auto sliderValue = getBandSliderValue (band);
 
         std::cout << "band " << band << " with freq " << getBand (band) << " value " << sliderValue << std::endl;
-        std::cout << firstBandBin << " " << lastBandBin << std::endl;
 
         for (int bin = firstBandBin; bin <= lastBandBin; bin++)
         {
@@ -55,7 +57,6 @@ void PluginProcessor::parameterValueChanged (int parameterIndex, float newValue)
             PluginEditor* ed = (PluginEditor*) editor;
             if (ed != nullptr)
             {
-                std::cout << "editorCreated: " << editorCreated << std::endl;
                 ed->updateEditorValues();
             }
             else
@@ -101,9 +102,6 @@ int PluginProcessor::updateBand (int index, double value)
     //     return -1;
     // auto arr = bandsArr.getArray();
     // arr->set (index, value);
-
-    // // update FFTProcessor spectralPanValues?
-    // // ...
 
     // std::cout << "size " << bandsArr.size() << std::endl;
     // std::cout << "index " << index << " value " << value << std::endl;
@@ -394,7 +392,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
         juce::ParameterID (getParamString (Parameter::band) + "0", 1),
         "Band 1 start frequency",
         0.f,
-        20000.f,
+        20.f,
         0.f);
     paramFloat->addListener (this);
     layout.add (std::move (paramFloat));
