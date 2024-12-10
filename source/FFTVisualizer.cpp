@@ -53,6 +53,8 @@ void FFTVisualizer::drawFrame (juce::Graphics& g)
     auto width = getLocalBounds().getWidth();
     auto height = getLocalBounds().getHeight();
 
+    bool bypassed = processorRef->apvts.getRawParameterValue (processorRef->getParamString (processorRef->Parameter::bypass))->load();
+
     // set lines colour
     g.setColour (juce::Colours::grey.darker());
 
@@ -101,13 +103,19 @@ void FFTVisualizer::drawFrame (juce::Graphics& g)
             continue;
         }
 
-        g.setColour (juce::Colours::beige);
+        if (!bypassed)
+            g.setColour (juce::Colours::beige);
+        else
+            g.setColour (juce::Colours::beige.darker());
         g.drawLine ({ (float) juce::jmap (logScale0To1 (previousBinFreq), 0.0, (double) width),
             juce::jmap (scopeDataL[i - 1], 0.0f, 1.0f, (float) height, 0.0f),
             (float) juce::jmap (logScale0To1 (binFreq), 0.0, (double) width),
             juce::jmap (scopeDataL[i], 0.0f, 1.0f, (float) height, 0.0f) });
 
-        g.setColour (juce::Colours::darkcyan);
+        if (!bypassed)
+            g.setColour (juce::Colours::darkcyan);
+        else
+            g.setColour (juce::Colours::darkcyan.darker());
         g.drawLine ({ (float) juce::jmap (logScale0To1 (previousBinFreq), 0.0, (double) width),
             juce::jmap (scopeDataR[i - 1], 0.0f, 1.0f, (float) height, 0.0f),
             (float) juce::jmap (logScale0To1 (binFreq), 0.0, (double) width),

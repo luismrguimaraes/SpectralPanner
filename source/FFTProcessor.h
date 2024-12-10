@@ -7,9 +7,15 @@
 
   Each channel should have its own FFTProcessor.
  */
+
+
 class FFTProcessor
 {
 public:
+    enum PanMode{
+        StereoBalance,
+        StereoPan
+    };
     FFTProcessor();
 
     int getLatencyInSamples() const { return fftSize; }
@@ -21,6 +27,7 @@ public:
     void setSampleRate (int sampleRate);
     int getSampleRate();
     void setPanLaw (float panLawDB);
+    void setPanMode (int panMode);
 
     // The FFT has 2^order points and fftSize/2 + 1 bins.
     static constexpr int fftOrder = 12;
@@ -64,6 +71,7 @@ private:
 
     int sampleRate;
     float panLawDB = 0.f;
+    int panMode = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FFTProcessor)
 };

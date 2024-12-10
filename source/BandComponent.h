@@ -13,12 +13,15 @@ public:
     void paint (juce::Graphics& g) override;
     void resized() override;
 
+    static const int separatorWidth = 5;
     float left;
     float minimumLeft;
     bool isDraggable = true;
 
     int bandID;
     juce::Slider slider { juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::TextBoxBelow };
+    juce::Label label { "Band frequency" };
+
 
 private:
     void mouseDown (const juce::MouseEvent& event) override;

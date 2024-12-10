@@ -16,7 +16,26 @@
 
 class PluginEditor;
 
-class PluginProcessor : public juce::AudioProcessor, juce::AudioProcessorParameter::Listener
+// class MyAudioParameterFloat : juce::AudioParameterFloat
+// {
+// public:
+//     MyAudioParameterFloat (const juce::ParameterID& parameterID, const juce::String& parameterName, juce::NormalisableRange<float> normalisableRange, float defaultValue)
+//         : juce::AudioParameterFloat (parameterID, parameterName, normalisableRange, defaultValue)
+//     {
+//     }
+//     ~MyAudioParameterFloat() : juce::~AudioParameterFloat() override{
+
+//     }
+
+// protected:
+//     void valueChanged (float newValue) override
+//     {
+//         std::cout << "Yo" << std::endl;
+//     }
+// };
+
+class PluginProcessor : public juce::AudioProcessor,
+                        juce::AudioProcessorParameter::Listener
 {
 public:
     // KEEP THIS HERE. for some reason parameterValueChanged was using this with value
@@ -28,7 +47,8 @@ public:
         band,
         bandSlider,
         bandsInUse,
-        panLaw
+        panLaw,
+        panMode
     };
     static juce::String getParamString (Parameter param)
     {
@@ -44,6 +64,8 @@ public:
                 return "bandsInUse";
             case panLaw:
                 return "panLaw";
+            case panMode:
+                return "panMode";
         }
     }
     float getBand (int index);

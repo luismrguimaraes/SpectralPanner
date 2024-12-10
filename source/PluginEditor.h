@@ -40,10 +40,13 @@ private:
     juce::TextButton inspectButton { "Inspect the UI" };
     juce::TextButton newBandButton { "New band" };
     void newBand (bool _initing = false);
-    juce::ToggleButton bypassButton;
+    juce::ToggleButton bypassButton {"Bypass"};
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassButtonAtt;
-    juce::Slider panLawSlider;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> panLawSliderAtt;
+    juce::Slider panLawSlider{ juce::Slider::LinearVertical, juce::Slider::TextBoxBelow };
+    // std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> panLawSliderAtt;
+    std::unique_ptr<juce::ParameterAttachment> panLawSliderAtt;
+    juce::ComboBox panModeComboBox;
+    std::unique_ptr<juce::ParameterAttachment> panModeComboBoxAtt;
 
     juce::Slider spectralSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxBelow };
     juce::Slider freqMaxSlider;
@@ -59,7 +62,7 @@ private:
 
     void mouseDoubleClick (const juce::MouseEvent& event) override;
 
-    int margin = 75;
+    int margin = 70;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };

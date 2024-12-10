@@ -5,6 +5,9 @@ BandComponent::BandComponent()
     addAndMakeVisible (slider);
     // slider.setRange (-1, 1);
     slider.setValue (0.0);
+
+    addAndMakeVisible (label);
+    label.setInterceptsMouseClicks (false, false);
 }
 
 void BandComponent::paint (juce::Graphics& g)
@@ -13,7 +16,7 @@ void BandComponent::paint (juce::Graphics& g)
     {
         auto b = getLocalBounds();
         g.setColour (juce::Colours::yellowgreen);
-        juce::Rectangle<int> rect (5, b.getHeight());
+        juce::Rectangle<int> rect (separatorWidth, b.getHeight());
         rect.setX (b.getX());
         g.fillRect (rect);
     }
@@ -23,17 +26,19 @@ void BandComponent::resized()
 {
     auto b = getLocalBounds();
 
-    auto newBounds = b.reduced (0, b.getHeight() / 3);
-    newBounds = newBounds.withSizeKeepingCentre (juce::jmin (newBounds.getHeight(), b.getWidth()), newBounds.getHeight());
+    auto newSliderBounds = b.reduced (0, b.getHeight() / 3);
+    newSliderBounds = newSliderBounds.withSizeKeepingCentre (juce::jmin (newSliderBounds.getHeight(), b.getWidth()), newSliderBounds.getHeight());
 
     if (isDraggable)
     {
         // get space for boundary line
-        auto xIncrement = 5;
-        newBounds = newBounds.withX (newBounds.getX() + xIncrement).withWidth (newBounds.getWidth() - xIncrement);
+        auto xIncrement = separatorWidth;
+        newSliderBounds = newSliderBounds.withX (newSliderBounds.getX() + xIncrement).withWidth (newSliderBounds.getWidth() - xIncrement);
+
+        label.setBounds (b.withX (b.getX() + xIncrement).withHeight (100).withWidth (juce::jmin (100, b.getWidth()) - xIncrement));
     }
-    slider.setBounds (newBounds);
-    if (newBounds.getWidth() < 90)
+    slider.setBounds (newSliderBounds);
+    if (newSliderBounds.getWidth() < 90)
     {
         slider.setSliderStyle (juce::Slider::SliderStyle::LinearVertical);
     }

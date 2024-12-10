@@ -24,7 +24,10 @@ void PluginProcessor::updateFFTProcessorPanValues()
         if (band == 0)
             firstBandBin = 1; // keep bin 0 (DC offset) unmodified
         else
-            firstBandBin = binFromFreq (getBand (band), getSampleRate());
+        {
+            auto binDouble = binFromFreq (getBand (band), getSampleRate());
+            firstBandBin = (int) std::ceil (binDouble);
+        }
         bool bandIsLast = band == getBandsInUse() - 1;
         if (!bandIsLast)
             lastBandBin = binFromFreq (getBand (band + 1), getSampleRate());
@@ -33,7 +36,7 @@ void PluginProcessor::updateFFTProcessorPanValues()
 
         auto sliderValue = getBandSliderValue (band);
 
-        std::cout << "band " << band << " with freq " << getBand (band) << " value " << sliderValue << std::endl;
+        // std::cout << "band " << band << " with freq " << getBand (band) << " value " << sliderValue << std::endl;
 
         for (int bin = firstBandBin; bin <= lastBandBin; bin++)
         {
@@ -46,9 +49,6 @@ void PluginProcessor::updateFFTProcessorPanValues()
 
 void PluginProcessor::parameterValueChanged (int parameterIndex, float newValue)
 {
-    // Handle the parameter value change
-    // juce::Logger::writeToLog ("Parameter " + juce::String (parameterIndex) + " changed to " + juce::String (newValue));
-
     // update PluginEditor
     if (editor != nullptr)
     {
@@ -75,7 +75,6 @@ void PluginProcessor::parameterValueChanged (int parameterIndex, float newValue)
     }
 
     updateFFTProcessorPanValues();
-    fftProc.setPanLaw (apvts.getRawParameterValue (getParamString (Parameter::panLaw))->load());
 }
 
 void PluginProcessor::parameterGestureChanged (int parameterIndex, bool gestureIsStarting)
@@ -87,38 +86,19 @@ void PluginProcessor::parameterGestureChanged (int parameterIndex, bool gestureI
 // Get band start frequency
 float PluginProcessor::getBand (int index)
 {
-    // std::cout << " arr size " << bandsArr.size() << std::endl;
-    // if (index > bandsArr.size() - 1)
-    //     return -1;
-    // return bandsArr[index];
-
     auto bandParam = getBandParameter (index);
     return *bandParam;
 }
 
 int PluginProcessor::updateBand (int index, double value)
 {
-    // if (index > bandsArr.size() - 1)
-    //     return -1;
-    // auto arr = bandsArr.getArray();
-    // arr->set (index, value);
-
-    // std::cout << "size " << bandsArr.size() << std::endl;
-    // std::cout << "index " << index << " value " << value << std::endl;
-
     auto bandParam = getBandParameter (index);
     *bandParam = value;
-    // std::cout << "value received: " << value << std::endl;
-    // std::cout << "new value: " << bandParam->getCurrentValueAsText() << std::endl;
-    // std::cout << "bands in use: " << getBandsInUse() << std::endl;
-
     return 0;
 }
 
 void PluginProcessor::addBand (double value)
 {
-    // bandsArr.append (value);
-
     jassert (canAddBand());
 
     auto bandParam = getBandParameter (getBandsInUse());
@@ -126,8 +106,6 @@ void PluginProcessor::addBand (double value)
 
     auto bandsInUseParam = getBandsInUseParameter();
     *bandsInUseParam = *bandsInUseParam + 1;
-    // std::cout << "param value just set: " << *bandsInUseParam << std::endl;
-    // std::cout << "actual: " << getBandsInUse() << std::endl;
 }
 
 bool PluginProcessor::canAddBand()
@@ -137,10 +115,6 @@ bool PluginProcessor::canAddBand()
 
 int PluginProcessor::removeBand (int index)
 {
-    // if (index > bandsArr.size() - 1)
-    //     return -1;
-    // bandsArr.remove (index);
-
     auto bandsInUseParam = getBandsInUseParameter();
     *bandsInUseParam = *bandsInUseParam - 1;
     return 0;
@@ -158,7 +132,6 @@ juce::AudioParameterFloat* PluginProcessor::getBandParameter (int bandIndex)
 {
     auto param = (juce::AudioParameterFloat*) apvts.getParameter (getParamString (Parameter::band) + juce::String (bandIndex));
 
-    // std::cout << param->getParameterID() << std::endl;
     return param;
 }
 
@@ -437,8 +410,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
         0.f,
         6.f,
         0.f);
-    paramInt->addListener (this);
     layout.add (std::move (paramInt));
+
+    auto paramCombo = std::make_unique<juce::AudioParameterChoice> (
+        juce::ParameterID (getParamString (Parameter::panMode), 1),
+        "Pan Mode",
+        juce::StringArray ({ "Stereo Balance", "Stereo Pan" }),
+        0);
+    layout.add (std::move (paramCombo));
 
     return layout;
 }

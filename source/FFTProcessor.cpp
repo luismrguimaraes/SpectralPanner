@@ -155,8 +155,21 @@ void FFTProcessor::processFrame (bool bypassed)
 
 void FFTProcessor::setPanLaw (float _panLawDB)
 {
-    if ((_panLawDB > 0.f && _panLawDB < 6.f) || juce::approximatelyEqual (_panLawDB, 0.f))
+    if ((_panLawDB > 0.f && _panLawDB < 6.1f) || juce::approximatelyEqual (_panLawDB, 0.f))
+    {
         panLawDB = _panLawDB;
+        DBG ("New pan law: " << panLawDB);
+    }
+}
+
+void FFTProcessor::setPanMode (int _panMode)
+{
+    if (_panMode >= 0 && _panMode <= 1)
+    {
+        panMode = _panMode;
+
+        DBG ("Pan mode is now " << panMode);
+    }
 }
 
 void FFTProcessor::processSpectrum (float* dataL, float* dataR, int _numBins)
@@ -171,16 +184,18 @@ void FFTProcessor::processSpectrum (float* dataL, float* dataR, int _numBins)
     {
         float panLawGain = juce::Decibels::decibelsToGain (panLawDB);
 
-        // Stereo Panning
-        if (spectralPanValues[i] > 0.0f)
+        if (panMode == PanMode::StereoPan)
         {
-            cdataR[i] += cdataL[i] * spectralPanValues[i];
-            cdataL[i] *= 1 - spectralPanValues[i];
-        }
-        else if (spectralPanValues[i] < 0.0f)
-        {
-            cdataL[i] += cdataR[i] * std::abs (spectralPanValues[i]);
-            cdataR[i] *= 1 - std::abs (spectralPanValues[i]);
+            if (spectralPanValues[i] > 0.0f)
+            {
+                cdataR[i] += cdataL[i] * spectralPanValues[i];
+                cdataL[i] *= 1 - spectralPanValues[i];
+            }
+            else if (spectralPanValues[i] < 0.0f)
+            {
+                cdataL[i] += cdataR[i] * std::abs (spectralPanValues[i]);
+                cdataR[i] *= 1 - std::abs (spectralPanValues[i]);
+            }
         }
 
         // Usually we want to work with the magnitude and phase rather
@@ -192,21 +207,23 @@ void FFTProcessor::processSpectrum (float* dataL, float* dataR, int _numBins)
 
         // This is where you'd do your spectral processing...
 
-        // float threeDBGain = juce::Decibels::decibelsToGain (3.0);
-        // float minusThreeDBGain = juce::Decibels::decibelsToGain (-3.0);
-        // float dbLawGain = juce::Decibels::decibelsToGain (6.0);
+        if (panMode == PanMode::StereoBalance)
+        {
+            // float threeDBGain = juce::Decibels::decibelsToGain (3.0);
+            // float minusThreeDBGain = juce::Decibels::decibelsToGain (-3.0);
+            // float dbLawGain = juce::Decibels::decibelsToGain (6.0);
 
-        // Stereo Balance Panning
-        // if (spectralPanValues[i] > 0.0f)
-        // {
-        //     magnitudeL *= juce::jmap (spectralPanValues[i], 1.f, 0.f);
-        //     magnitudeR *= juce::jmap (spectralPanValues[i], 1.f, panLawGain);
-        // }
-        // else if (spectralPanValues[i] < 0.0f)
-        // {
-        //     magnitudeL *= juce::jmap (spectralPanValues[i], 0.f, -1.f, 1.f, panLawGain);
-        //     magnitudeR *= juce::jmap (spectralPanValues[i], 0.f, -1.f, 1.f, 0.f);
-        // }
+            if (spectralPanValues[i] > 0.0f)
+            {
+                magnitudeL *= juce::jmap (spectralPanValues[i], 1.f, 0.f);
+                magnitudeR *= juce::jmap (spectralPanValues[i], 1.f, panLawGain);
+            }
+            else if (spectralPanValues[i] < 0.0f)
+            {
+                magnitudeL *= juce::jmap (spectralPanValues[i], 0.f, -1.f, 1.f, panLawGain);
+                magnitudeR *= juce::jmap (spectralPanValues[i], 0.f, -1.f, 1.f, 0.f);
+            }
+        }
 
         // fill/update fftDisplayable
         fftDisplayableL[i] = magnitudeL;

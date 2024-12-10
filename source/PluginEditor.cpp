@@ -6,12 +6,51 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     juce::ignoreUnused (processorRef);
 
     bypassButtonAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (processorRef.apvts, processorRef.getParamString (processorRef.Parameter::bypass), bypassButton);
-    panLawSliderAtt = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processorRef.apvts, processorRef.getParamString (processorRef.Parameter::panLaw), panLawSlider);
+    addAndMakeVisible (bypassButton);
+
+    // panLawSliderAtt = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processorRef.apvts, processorRef.getParamString (processorRef.Parameter::panLaw), panLawSlider);
+    panLawSlider.setRange (0, 6, 1);
+    auto panLawSliderFun = [&] (float newValue) {
+        panLawSlider.setValue (newValue);
+        // update FFTProc panLaw value when the processor parameter value changes.
+        processorRef.fftProc.setPanLaw (newValue);
+    };
+    panLawSliderAtt = std::make_unique<juce::ParameterAttachment> (*processorRef.apvts.getParameter (processorRef.getParamString (processorRef.Parameter::panLaw)), panLawSliderFun, nullptr);
+    panLawSlider.onValueChange = [&] {
+        panLawSliderAtt->setValueAsPartOfGesture (panLawSlider.getValue());
+    };
+    addAndMakeVisible (panLawSlider);
+
+    panModeComboBox.addItem ("Stereo Balance", FFTProcessor::PanMode::StereoBalance + 1);
+    panModeComboBox.addItem ("Stereo Pan", FFTProcessor::PanMode::StereoPan + 1);
+    panModeComboBox.setSelectedId (processorRef.apvts.getRawParameterValue (processorRef.getParamString (processorRef.Parameter::panMode))->load() + 1);
+    panModeComboBox.setTooltip ("Stereo Balance adjusts the levels of the left and right channels independently while Stereo Pan mixes the two channels together");
+    auto panModeComboBoxFun = [&] (float newValue) {
+        panModeComboBox.setSelectedId (newValue + 1);
+        // update FFTProc pan mode
+        processorRef.fftProc.setPanMode (newValue);
+        // enable/disable panLawSlider
+        if (newValue == FFTProcessor::StereoBalance)
+        {
+            panLawSlider.setVisible (true);
+        }
+        else
+        {
+            panLawSlider.setVisible (false);
+        }
+    };
+    panModeComboBoxAtt = std::make_unique<juce::ParameterAttachment> (*processorRef.apvts.getParameter (processorRef.getParamString (processorRef.Parameter::panMode)), panModeComboBoxFun, nullptr);
+    panModeComboBox.onChange = [&] {
+        panModeComboBoxAtt->setValueAsPartOfGesture (panModeComboBox.getSelectedId() - 1);
+    };
+    addAndMakeVisible (panModeComboBox);
 
     fftVis = std::make_unique<FFTVisualizer>();
     addAndMakeVisible (*fftVis);
     fftVis->processorRef = &processorRef;
 
+#ifdef JUCE_DEBUG
+    // debug code
     addAndMakeVisible (inspectButton);
     // this chunk of code instantiates and opens the melatonin inspector
     inspectButton.onClick = [&] {
@@ -23,33 +62,12 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 
         inspector->setVisible (true);
     };
-
-    // auto bandComp1 = std::make_unique<BandComponent>();
-    // addAndMakeVisible (*bandComp1);
-    // bandComp1->isDraggable = false;
-    // bandComp1->left = margin;
-    // bandComp1->minimumLeft = bandComp1->left;
-    // bandComp1->bandID = (int) bandComponents.size();
-    // processorRef.addBand (getFreqFromLeft (bandComp1->left));
-    // bandComponents.push_back (std::move (bandComp1));
-    // auto newBandRemoveButton = std::make_unique<juce::TextButton> ("-");
-    // bandRemoveButtons.push_back (std::move (newBandRemoveButton));
+#endif
 
     addAndMakeVisible (newBandButton);
     newBandButton.onClick = [&] {
         newBand();
     };
-
-    addAndMakeVisible (bypassButton);
-    addAndMakeVisible (panLawSlider);
-
-    // addAndMakeVisible (spectralSlider);
-    // spectralSlider.setRange (-1, 1);
-    // spectralSlider.setValue (0.0);
-    // spectralSlider.onValueChange = [this] {
-    //     *processorRef.fft[0].spectralSliderValue = -spectralSlider.getValue();
-    //     *processorRef.fft[1].spectralSliderValue = spectralSlider.getValue();
-    // };
 
     // addAndMakeVisible (freqMaxSlider);
     freqMaxSlider.setRange (1000, 20000);
@@ -70,20 +88,18 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     setSize (850, 550);
     //setResizable (true, true);
     //setResizeLimits (500, 300, 10000, 10000);
-
-    std::cout << "--------------Initing:" << initing.load() << std::endl;
 }
 
 PluginEditor::~PluginEditor()
 {
+    std::cout << "destroying editor" << std::endl;
+
     // bandComponents.clear();
     // bandRemoveButtons.clear();
 
     initing.store (true);
 
     processorRef.editorCreated.store (false);
-
-    std::cout << "destroying editor" << std::endl;
 }
 
 void PluginEditor::newBand (bool _initing)
@@ -281,16 +297,22 @@ void PluginEditor::resized()
                 bandComponents[i]->setBounds (b.withRight (bandComponents[i + 1]->left).withLeft (bandComponents[i]->left));
             }
 
-            bandRemoveButtons[i]->setBounds (bandComponents[i]->getBounds().withWidth (40).withHeight (20));
+            bandRemoveButtons[i]->setBounds (bandComponents[i]->getBounds().withWidth (40).withHeight (20).withX (bandComponents[i]->getBounds().getX() + BandComponent::separatorWidth * 2));
+
+            // set label values
+            bandComponents[i]->label.setText (juce::String (getFreqFromLeft (bandComponents[i]->left)), juce::NotificationType::dontSendNotification);
         }
     }
 
     inspectButton.setBounds (getLocalBounds().withWidth (100).withHeight (50).withY (0));
 
-    newBandButton.setBounds (getLocalBounds().withWidth (200).withHeight (50).withY (getLocalBounds().getBottom() - 50));
-    bypassButton.setBounds (getLocalBounds().withWidth (50).withHeight (50).withY (getLocalBounds().getBottom() - 50));
+    newBandButton.setBounds (getLocalBounds().withWidth (150).withHeight (50).withY (getLocalBounds().getBottom() - 50));
+    // bypassButton.setBounds (getLocalBounds().withWidth (50).withHeight (50).withY (getLocalBounds().getBottom() - 50));
+    bypassButton.setBounds (getLocalBounds().withWidth (100).withHeight (50).withY (0).withX (getLocalBounds().getRight() - 100));
 
-    panLawSlider.setBounds (getLocalBounds().withWidth (200).withHeight (50).withY (0).withX (getLocalBounds().getRight() - 200));
+    // panLawSlider.setBounds (getLocalBounds().withWidth (200).withHeight (50).withY (0).withX (getLocalBounds().getRight() - 200));
+    panLawSlider.setBounds (getLocalBounds().withWidth (margin).withHeight (150).withCentre (getLocalBounds().getCentre()).withX (getLocalBounds().getRight() - margin));
+    panModeComboBox.setBounds (getLocalBounds().withWidth (150).withHeight (50).withCentre (getLocalBounds().getCentre()).withY (0));
 
     // spectralSlider.setBounds (b.withHeight (100));
 
