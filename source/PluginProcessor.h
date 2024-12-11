@@ -14,26 +14,6 @@
     #include "ipps.h"
 #endif
 
-class PluginEditor;
-
-// class MyAudioParameterFloat : juce::AudioParameterFloat
-// {
-// public:
-//     MyAudioParameterFloat (const juce::ParameterID& parameterID, const juce::String& parameterName, juce::NormalisableRange<float> normalisableRange, float defaultValue)
-//         : juce::AudioParameterFloat (parameterID, parameterName, normalisableRange, defaultValue)
-//     {
-//     }
-//     ~MyAudioParameterFloat() : juce::~AudioParameterFloat() override{
-
-//     }
-
-// protected:
-//     void valueChanged (float newValue) override
-//     {
-//         std::cout << "Yo" << std::endl;
-//     }
-// };
-
 class PluginProcessor : public juce::AudioProcessor,
                         juce::AudioProcessorParameter::Listener
 {
