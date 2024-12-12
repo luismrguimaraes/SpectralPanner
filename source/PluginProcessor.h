@@ -14,15 +14,21 @@
     #include "ipps.h"
 #endif
 
-class PluginEditor;
-
-class PluginProcessor : public juce::AudioProcessor, juce::AudioProcessorParameter::Listener
+class PluginProcessor : public juce::AudioProcessor,
+                        juce::AudioProcessorParameter::Listener
 {
 public:
+    // KEEP THIS HERE. for some reason parameterValueChanged was using this with value
+    // true, when it was the last public declaration.
+    std::atomic<bool> editorCreated = false;
+
     enum Parameter {
         bypass,
         band,
-        bandsInUse
+        bandSlider,
+        bandsInUse,
+        panLaw,
+        panMode
     };
     static juce::String getParamString (Parameter param)
     {
@@ -32,14 +38,20 @@ public:
                 return "bypass";
             case band:
                 return "band";
+            case bandSlider:
+                return "bandSlider";
             case bandsInUse:
                 return "bandsInUse";
+            case panLaw:
+                return "panLaw";
+            case panMode:
+                return "panMode";
         }
     }
     float getBand (int index);
     int updateBand (int index, double value);
     void addBand (double value);
-    int removeBand (int index);
+    int removeBand (int index = -1);
     bool canAddBand();
     int const bandNMax = 10;
 
@@ -76,8 +88,9 @@ public:
     // std::atomic<bool> stftReady = false;
 
     int getBandsInUse();
+    float getBandSliderValue (int);
     // We need a separate FFTProcessor for each channel.
-    FFTProcessor fft[2];
+    FFTProcessor fftProc;
 
     juce::AudioProcessorParameter* getBypassParameter() const override;
     juce::AudioProcessorValueTreeState apvts { *this, nullptr, "Parameters", createParameterLayout() };
@@ -92,4 +105,6 @@ private:
 
     void parameterValueChanged (int, float) override;
     void parameterGestureChanged (int, bool) override;
+
+    void updateFFTProcessorPanValues();
 };

@@ -28,14 +28,14 @@ set(PROJECT_NAME "SpectralPanner")
 set(PRODUCT_NAME "Spectral Panner")
 
 # Change me! Used for the MacOS bundle name and Installers
-set(COMPANY_NAME "Luis")
+set(COMPANY_NAME "Luis Guimaraes")
 
 # Change me! Used for the MacOS bundle identifier (and signing)
 set(BUNDLE_ID "com.luis.luis")
 
 # Change me! Set the plugin formats you want built
 # Valid choices: AAX Unity VST VST3 AU AUv3 Standalone
-set(FORMATS Standalone AU VST3 AUv3)
+set(FORMATS AU VST3 AUv3)
 
 # For simplicity, the name of the CMake project is also the name of the target
 project(${PROJECT_NAME} VERSION ${CURRENT_VERSION})

@@ -6,11 +6,51 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     juce::ignoreUnused (processorRef);
 
     bypassButtonAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (processorRef.apvts, processorRef.getParamString (processorRef.Parameter::bypass), bypassButton);
+    addAndMakeVisible (bypassButton);
+
+    // panLawSliderAtt = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processorRef.apvts, processorRef.getParamString (processorRef.Parameter::panLaw), panLawSlider);
+    panLawSlider.setRange (0, 6, 1);
+    auto panLawSliderFun = [&] (float newValue) {
+        panLawSlider.setValue (newValue);
+        // update FFTProc panLaw value when the processor parameter value changes.
+        processorRef.fftProc.setPanLaw (newValue);
+    };
+    panLawSliderAtt = std::make_unique<juce::ParameterAttachment> (*processorRef.apvts.getParameter (processorRef.getParamString (processorRef.Parameter::panLaw)), panLawSliderFun, nullptr);
+    panLawSlider.onValueChange = [&] {
+        panLawSliderAtt->setValueAsPartOfGesture (panLawSlider.getValue());
+    };
+    addAndMakeVisible (panLawSlider);
+
+    panModeComboBox.addItem ("Stereo Balance", FFTProcessor::PanMode::StereoBalance + 1);
+    panModeComboBox.addItem ("Stereo Pan", FFTProcessor::PanMode::StereoPan + 1);
+    panModeComboBox.setSelectedId (processorRef.apvts.getRawParameterValue (processorRef.getParamString (processorRef.Parameter::panMode))->load() + 1);
+    panModeComboBox.setTooltip ("Stereo Balance adjusts the levels of the left and right channels independently while Stereo Pan mixes the two channels together");
+    auto panModeComboBoxFun = [&] (float newValue) {
+        panModeComboBox.setSelectedId (newValue + 1);
+        // update FFTProc pan mode
+        processorRef.fftProc.setPanMode (newValue);
+        // enable/disable panLawSlider
+        if (newValue == FFTProcessor::StereoBalance)
+        {
+            panLawSlider.setVisible (true);
+        }
+        else
+        {
+            panLawSlider.setVisible (false);
+        }
+    };
+    panModeComboBoxAtt = std::make_unique<juce::ParameterAttachment> (*processorRef.apvts.getParameter (processorRef.getParamString (processorRef.Parameter::panMode)), panModeComboBoxFun, nullptr);
+    panModeComboBox.onChange = [&] {
+        panModeComboBoxAtt->setValueAsPartOfGesture (panModeComboBox.getSelectedId() - 1);
+    };
+    addAndMakeVisible (panModeComboBox);
 
     fftVis = std::make_unique<FFTVisualizer>();
     addAndMakeVisible (*fftVis);
     fftVis->processorRef = &processorRef;
 
+#ifdef JUCE_DEBUG
+    // debug code
     addAndMakeVisible (inspectButton);
     // this chunk of code instantiates and opens the melatonin inspector
     inspectButton.onClick = [&] {
@@ -22,31 +62,11 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 
         inspector->setVisible (true);
     };
-
-    // auto bandComp1 = std::make_unique<BandComponent>();
-    // addAndMakeVisible (*bandComp1);
-    // bandComp1->isDraggable = false;
-    // bandComp1->left = margin;
-    // bandComp1->minimumLeft = bandComp1->left;
-    // bandComp1->bandID = (int) bandComponents.size();
-    // processorRef.addBand (getFreqFromLeft (bandComp1->left));
-    // bandComponents.push_back (std::move (bandComp1));
-    // auto newBandRemoveButton = std::make_unique<juce::TextButton> ("-");
-    // bandRemoveButtons.push_back (std::move (newBandRemoveButton));
+#endif
 
     addAndMakeVisible (newBandButton);
     newBandButton.onClick = [&] {
         newBand();
-    };
-
-    addAndMakeVisible (bypassButton);
-
-    addAndMakeVisible (spectralSlider);
-    spectralSlider.setRange (-1, 1);
-    spectralSlider.setValue (0.0);
-    spectralSlider.onValueChange = [this] {
-        *processorRef.fft[0].spectralSliderValue = -spectralSlider.getValue();
-        *processorRef.fft[1].spectralSliderValue = spectralSlider.getValue();
     };
 
     // addAndMakeVisible (freqMaxSlider);
@@ -65,19 +85,21 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize (800, 500);
+    setSize (850, 550);
     //setResizable (true, true);
     //setResizeLimits (500, 300, 10000, 10000);
 }
 
 PluginEditor::~PluginEditor()
 {
+    std::cout << "destroying editor" << std::endl;
+
     // bandComponents.clear();
     // bandRemoveButtons.clear();
 
-    initing = true;
+    initing.store (true);
 
-    std::cout << "destroying" << std::endl;
+    processorRef.editorCreated.store (false);
 }
 
 void PluginEditor::newBand (bool _initing)
@@ -100,6 +122,9 @@ void PluginEditor::newBand (bool _initing)
         return;
     }
 
+    std::cout << "adding band" << std::endl;
+
+    // -- band components--
     std::unique_ptr<BandComponent> newBandComponent = std::make_unique<BandComponent>();
     addAndMakeVisible (*newBandComponent);
     if (isFirstBand)
@@ -110,16 +135,21 @@ void PluginEditor::newBand (bool _initing)
     if (_initing)
     {
         auto b = getLocalBounds().reduced (margin);
-        newBandComponent->left = juce::jmap (processorRef.getBand ((int) bandComponents.size()), 0.f, 20000.f, (float) b.getX(), (float) b.getX() + b.getWidth());
+        newBandComponent->left = getLeftFromFreq (processorRef.getBand ((int) bandComponents.size()));
     }
     else
+    {
+        std::cout << "newLeft:" << newLeft << std::endl;
         newBandComponent->left = newLeft;
+    }
     newBandComponent->bandID = (int) bandComponents.size();
 
     if (!_initing)
         processorRef.addBand (getFreqFromLeft (newBandComponent->left));
     bandComponents.push_back (std::move (newBandComponent));
+    // -- band components--
 
+    // -- band remove buttons --
     auto newBandRemoveButton = std::make_unique<juce::TextButton> ("-");
     if (!isFirstBand)
     {
@@ -130,6 +160,17 @@ void PluginEditor::newBand (bool _initing)
         };
     }
     bandRemoveButtons.push_back (std::move (newBandRemoveButton));
+    // -- band remove buttons --
+
+    // -- slider attachments --
+    auto lastBandIndex = (int) bandComponents.size() - 1;
+    auto parameterIdentifier = processorRef.getParamString (processorRef.Parameter::bandSlider) + juce::String (lastBandIndex);
+    auto newSliderAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processorRef.apvts, parameterIdentifier, bandComponents[lastBandIndex]->slider);
+    auto param = processorRef.apvts.getParameter (parameterIdentifier);
+    if (!_initing)
+        param->setValueNotifyingHost (param->getDefaultValue());
+    bandSliderAttachments.push_back (std::move (newSliderAttach));
+    // -- slider attachments --
 
     if (!_initing)
     {
@@ -146,6 +187,9 @@ void PluginEditor::removeBand (int bandID)
 {
     jassert (bandID < (int) bandComponents.size());
 
+    std::cout << "Removing band " << bandID << std::endl;
+
+    bandSliderAttachments.erase (bandSliderAttachments.begin() + bandID); // MUST RUN BEFORE bandComponents.erase() !!
     bandComponents.erase (bandComponents.begin() + bandID);
     bandRemoveButtons.erase (bandRemoveButtons.begin() + bandID);
     processorRef.removeBand (bandID);
@@ -159,7 +203,29 @@ void PluginEditor::removeBand (int bandID)
         bandRemoveButtons[i]->onClick = [&, i] {
             removeBand (i);
         };
+
+        // update slider attachments
+        if (i >= bandID)
+        {
+            // // move attachments after the band removed 1 band back
+
+            auto paramID = processorRef.getParamString (processorRef.Parameter::bandSlider) + juce::String (i);
+            auto nextParamID = processorRef.getParamString (processorRef.Parameter::bandSlider) + juce::String (i + 1);
+            std::cout << nextParamID << std::endl;
+
+            // remove attachment
+            bandSliderAttachments[i] = nullptr;
+
+            // create new attachment with updated value
+            auto newSliderAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (processorRef.apvts, paramID, bandComponents[i]->slider);
+            processorRef.apvts.getParameter (paramID)->setValueNotifyingHost (processorRef.apvts.getParameter (nextParamID)->getValue());
+            bandSliderAttachments[i] = std::move (newSliderAttach);
+        }
     }
+
+    // reset last slider value param
+    auto lastParamID = processorRef.getParamString (processorRef.Parameter::bandSlider) + juce::String (processorRef.bandNMax - 1);
+    processorRef.apvts.getParameter (lastParamID)->setValueNotifyingHost (processorRef.apvts.getParameter (lastParamID)->getDefaultValue());
 
     // resized();
     updateProcessorValues();
@@ -183,14 +249,19 @@ void PluginEditor::paint (juce::Graphics& g)
 
 void PluginEditor::resized()
 {
-    if (initing)
+    if (initing.load())
     {
         for (int i = 0; i < processorRef.getBandsInUse(); ++i)
         {
             newBand (true);
         }
-        initing = false;
+        initing.store (false);
+
+        processorRef.editorCreated.store (true);
     }
+
+    jassert (bandComponents.size() == bandRemoveButtons.size());
+    jassert (bandComponents.size() == bandSliderAttachments.size());
 
     auto b = getLocalBounds().reduced (margin);
 
@@ -211,7 +282,6 @@ void PluginEditor::resized()
         }
 
         // set bounds
-        jassert (bandComponents.size() == bandRemoveButtons.size());
         for (int i = bandComponents.size() - 1; i >= 0; --i)
         {
             if (i == 0)
@@ -227,19 +297,27 @@ void PluginEditor::resized()
                 bandComponents[i]->setBounds (b.withRight (bandComponents[i + 1]->left).withLeft (bandComponents[i]->left));
             }
 
-            bandRemoveButtons[i]->setBounds (bandComponents[i]->getBounds().withWidth (40).withHeight (20));
+            bandRemoveButtons[i]->setBounds (bandComponents[i]->getBounds().withWidth (40).withHeight (20).withX (bandComponents[i]->getBounds().getX() + BandComponent::separatorWidth * 2));
+
+            // set label values
+            bandComponents[i]->label.setText (juce::String (getFreqFromLeft (bandComponents[i]->left)), juce::NotificationType::dontSendNotification);
         }
     }
 
     inspectButton.setBounds (getLocalBounds().withWidth (100).withHeight (50).withY (0));
 
-    newBandButton.setBounds (getLocalBounds().withWidth (200).withHeight (50).withY (getLocalBounds().getBottom() - 50));
-    bypassButton.setBounds (getLocalBounds().withWidth (50).withHeight (50).withY (getLocalBounds().getBottom() - 50));
+    newBandButton.setBounds (getLocalBounds().withWidth (150).withHeight (50).withY (getLocalBounds().getBottom() - 50));
+    // bypassButton.setBounds (getLocalBounds().withWidth (50).withHeight (50).withY (getLocalBounds().getBottom() - 50));
+    bypassButton.setBounds (getLocalBounds().withWidth (100).withHeight (50).withY (0).withX (getLocalBounds().getRight() - 100));
 
-    spectralSlider.setBounds (b.withHeight (100));
+    // panLawSlider.setBounds (getLocalBounds().withWidth (200).withHeight (50).withY (0).withX (getLocalBounds().getRight() - 200));
+    panLawSlider.setBounds (getLocalBounds().withWidth (margin).withHeight (150).withCentre (getLocalBounds().getCentre()).withX (getLocalBounds().getRight() - margin));
+    panModeComboBox.setBounds (getLocalBounds().withWidth (150).withHeight (50).withCentre (getLocalBounds().getCentre()).withY (0));
 
-    freqMaxSlider.setBounds (b.withWidth (b.getWidth() / 2).withX (b.getWidth() / 2 + 50).withHeight (50).withY (b.getHeight() + 25));
-    skewFactorSlider.setBounds (b.withWidth (b.getWidth() / 2).withHeight (50).withY (b.getHeight() + 25));
+    // spectralSlider.setBounds (b.withHeight (100));
+
+    // freqMaxSlider.setBounds (b.withWidth (b.getWidth() / 2).withX (b.getWidth() / 2 + 50).withHeight (50).withY (b.getHeight() + 25));
+    // skewFactorSlider.setBounds (b.withWidth (b.getWidth() / 2).withHeight (50).withY (b.getHeight() + 25));
 }
 
 void PluginEditor::mouseDoubleClick (const juce::MouseEvent& event)
@@ -251,44 +329,43 @@ double inline PluginEditor::getFreqFromLeft (float left)
 {
     auto b = getLocalBounds().reduced (margin);
 
-    double value = 0;
+    double value0To1 = 0;
     if (juce::approximatelyEqual (b.getX(), b.getX() + b.getWidth()))
     {
         std::cout << "getFreqFromLeft error" << std::endl;
-        return value;
+        return value0To1;
     };
 
-    value = juce::jmap ((float) left, (float) b.getX(), (float) b.getX() + b.getWidth(), 0.f, 1.f);
-    return value * fftVis->freqMax;
+    value0To1 = juce::jmap ((float) left, (float) b.getX(), (float) b.getX() + b.getWidth(), 0.f, 1.f);
+    // auto freq = value * (fftVis->freqMax - fftVis->freqMin) + fftVis->freqMin;
+
+    return logScaleFrom0To1 (value0To1);
+}
+
+float inline PluginEditor::getLeftFromFreq (double freq)
+{
+    auto b = getLocalBounds().reduced (margin);
+
+    // clip freq
+    freq = juce::jlimit (20.0, 20000.0, freq);
+
+    float left = juce::jmap ((float) logScale0To1 (freq), (float) b.getX(), (float) b.getX() + b.getWidth());
+    return left;
 }
 
 void PluginEditor::updateProcessorValues()
 {
-    for (int i = 0; i < bandComponents.size(); ++i)
+    for (int i = 1; i < bandComponents.size(); ++i)
     {
-        std::cout << "updating band " << i << " with value " << getFreqFromLeft (bandComponents[i]->left) << std::endl;
+        // std::cout << "updating band " << i << " with value " << getFreqFromLeft (bandComponents[i]->left) << std::endl;
         processorRef.updateBand (i, getFreqFromLeft (bandComponents[i]->left));
     }
-
-    // int bandIndex = 0;
-    // for (int i = 0; i < FFTProcessor::numBins; ++i)
-    // {
-    //     // Left
-    //     processorRef.fft[0].newSpectralMultipliers[i] =
-    //         // Right
-    //         processorRef.fft[1].newSpectralMultipliers[i] =
-    // }
-
-    // processorRef.fft[0].spectralMultipliersChanged.store (true);
-    // processorRef.fft[1].spectralMultipliersChanged.store (true);
-    // *processorRef.fft[0].spectralSliderValue = -spectralSlider.getValue();
-    // *processorRef.fft[1].spectralSliderValue = spectralSlider.getValue();
 }
 
 // Call when processor values (without attachments) changed (bands frequency and bands in use)
 void PluginEditor::updateEditorValues()
 {
-    if (!initing)
+    if (!initing.load())
         triggerAsyncUpdate();
 }
 void PluginEditor::handleAsyncUpdate()
@@ -305,7 +382,7 @@ void PluginEditor::handleAsyncUpdate()
     }
     for (int i = 1; i < processorRef.getBandsInUse(); ++i)
     {
-        auto value = juce::jmap (processorRef.getBand (i), 0.f, 20000.f, (float) b.getX(), (float) b.getX() + b.getWidth());
+        // auto value = juce::jmap (processorRef.getBand (i), 0.f, 20000.f, (float) b.getX(), (float) b.getX() + b.getWidth());
         //     auto min = juce::jmap ((int) processorRef.getBand (i - 1) + 50, 0, 20000, b.getX(), b.getX() + b.getWidth());
         //     auto max = -1;
         //     if (i < processorRef.getBandsInUse() - 1)
@@ -316,9 +393,9 @@ void PluginEditor::handleAsyncUpdate()
         //     if (value > max)
         //         value = max;
 
-        bandComponents[i]->left = value;
+        bandComponents[i]->left = getLeftFromFreq (processorRef.getBand (i));
 
-        std::cout << "value: " << value << std::endl;
+        // std::cout << "value: " << value << std::endl;
     }
 
     // // render

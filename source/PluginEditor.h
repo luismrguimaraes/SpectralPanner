@@ -31,7 +31,7 @@ public:
     void updateEditorValues();
 
 private:
-    bool initing = true; // if false, then it has initialized
+    std::atomic<bool> initing = true; // if false, then it has initialized
 
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
@@ -40,8 +40,13 @@ private:
     juce::TextButton inspectButton { "Inspect the UI" };
     juce::TextButton newBandButton { "New band" };
     void newBand (bool _initing = false);
-    juce::ToggleButton bypassButton;
+    juce::ToggleButton bypassButton {"Bypass"};
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassButtonAtt;
+    juce::Slider panLawSlider{ juce::Slider::LinearVertical, juce::Slider::TextBoxBelow };
+    // std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> panLawSliderAtt;
+    std::unique_ptr<juce::ParameterAttachment> panLawSliderAtt;
+    juce::ComboBox panModeComboBox;
+    std::unique_ptr<juce::ParameterAttachment> panModeComboBoxAtt;
 
     juce::Slider spectralSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxBelow };
     juce::Slider freqMaxSlider;
@@ -50,12 +55,14 @@ private:
 
     std::vector<std::unique_ptr<BandComponent>> bandComponents;
     std::vector<std::unique_ptr<juce::TextButton>> bandRemoveButtons;
+    std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>> bandSliderAttachments;
 
     double getFreqFromLeft (float left);
+    float getLeftFromFreq (double freq);
 
     void mouseDoubleClick (const juce::MouseEvent& event) override;
 
-    int margin = 50;
+    int margin = 70;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };
