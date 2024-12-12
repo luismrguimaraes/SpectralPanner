@@ -1,0 +1,23 @@
+# This is a CODEOWNERS file that specifies the code owners for the repository.
+
+# Pattern: /path/to/file pattern @owner1 @owner2
+# Example: /src/js/*.js @john @jane
+
+# Specify the code owners for specific files or directories
+# /path/to/file @owner1 @owner2
+# /path/to/directory/ @owner3
+
+# Specify the code owners for all files in a directory and its subdirectories
+# /path/to/directory/* @owner4
+
+# Specify the code owners for all files in the repository
+* @luismrguimaraes
+
+# Specify the code owners for a specific file extension
+# *.js @owner6
+
+# Specify the code owners for a specific file name
+# file.txt @owner7
+
+# Specify the code owners for a specific file path
+# /path/to/file.txt @owner8
