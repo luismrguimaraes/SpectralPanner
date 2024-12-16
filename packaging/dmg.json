@@ -14,7 +14,6 @@
   },
   "format": "UDZO",
   "contents": [
-    { "x": 250, "y": 200, "type": "file", "path": "dmg/Spectral Panner.app" },
     { "x": 480, "y": 200, "type": "link", "path": "/Applications" },
     { "x": 250, "y": 300, "type": "file", "path": "dmg/Spectral Panner.component" },
     { "x": 480, "y": 300, "type": "file", "path": "dmg/Your Mac's Component Folder" },

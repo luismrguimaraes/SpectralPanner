@@ -52,12 +52,13 @@ add_subdirectory(JUCE)
 # This adds the melatonin inspector module
 add_subdirectory (modules/melatonin_inspector)
 
-add_subdirectory(JUCE/extras/AudioPluginHost)
+# Shouldn't build in release builds
+# add_subdirectory(JUCE/extras/AudioPluginHost)
 
 # See `docs/CMake API.md` in the JUCE repo for all config options
 juce_add_plugin("${PROJECT_NAME}"
     # Icons for the standalone app
-    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/packaging/icon.png"
+    # ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/packaging/icon.png"
 
     # Change me!
     COMPANY_NAME "${COMPANY_NAME}"
