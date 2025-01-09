@@ -53,7 +53,9 @@ add_subdirectory(JUCE)
 add_subdirectory (modules/melatonin_inspector)
 
 # Shouldn't build in release builds
-# add_subdirectory(JUCE/extras/AudioPluginHost)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug") 
+    add_subdirectory(JUCE/extras/AudioPluginHost)
+endif()
 
 # See `docs/CMake API.md` in the JUCE repo for all config options
 juce_add_plugin("${PROJECT_NAME}"
